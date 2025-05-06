@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Resumen Mensual de Asistencias</title>
+
+    <!-- Estilos y librerías -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1300px;
+        }
+
+        .badge-danger {
+            background-color: #dc3545;
+        }
+
+        .badge-warning {
+            background-color: #ffc107;
+        }
+
+        .badge-success {
+            background-color: #28a745;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h3 class="mb-4" id="tituloResumen">📅 Resumen Mensual de Asistencias</h3>
+
+        <div class="row g-3 align-items-end mb-4">
+            <div class="col-md-auto">
+                <label for="mesSeleccionado" class="form-label">Mes</label>
+                <input type="month" id="mesSeleccionado" class="form-control" />
+            </div>
+            <div class="col-md-auto">
+                <label for="filtroSector" class="form-label">Sector</label>
+                <select id="filtroSector" class="form-select">
+                    <option value="Todos">Todos</option>
+                </select>
+            </div>
+            
+            <div class="col-md-auto d-grid">
+                <button class="btn btn-primary" onclick="cargarResumenMensual()">🔄 Ver resumen</button>
+            </div>
+            <div class="col-md-auto d-grid">
+                <button class="btn btn-success" onclick="exportarExcel()">📁 Exportar a Excel</button>
+            </div>
+            <div class="col-md-auto d-grid">
+                <button class="btn btn-outline-secondary" onclick="imprimirResumen()">🖨️ Imprimir</button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover" id="tablaResumenMensual">
+                <thead class="table-dark" id="encabezadoTabla">
+                    <tr>
+                        <th class="th-legajo">Legajo</th>
+                        <th class="th-apellido">Apellido</th>
+                        <th class="th-nombre">Nombre</th>
+                        <th class="th-sector">Sector</th>
+                        <th>✔️ Completos</th>
+                        <th>⚠️ Parciales</th>
+                        <th>⏳ Incompletos</th>
+                        <th>❌ Ausentes</th>
+                        <th>⏱ Horas</th>
+                        <th>📈 % Cumplimiento</th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyResumenMensual"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyC4v9h8eXWRBnzTD-VDDludynd5nzOv4xc",
+            authDomain: "est-utn-c0988.firebaseapp.com",
+            projectId: "est-utn-c0988",
+            storageBucket: "est-utn-c0988.firebasestorage.app",
+            messagingSenderId: "788767016042",
+            appId: "1:788767016042:web:8a480a74e3b1ef0de97613"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        let usuarioActual = null;
+
+        auth.onAuthStateChanged(async user => {
+            if (!user) return window.location.href = "login.html";
+            const doc = await db.collection("usuarios").doc(user.uid).get();
+            if (!doc.exists) {
+              alert("❌ Usuario no registrado");
+              return window.location.href = "menu.html";
+            }
+          
+            usuarioActual = doc.data();
+          
+            const hoy = new Date().toISOString().slice(0, 7);
+            document.getElementById("mesSeleccionado").value = hoy;
+          
+            if (usuarioActual.rol === "admin") {
+              await cargarSectoresUnicos();
+            } else {
+              // Ocultar filtros
+              document.getElementById("filtroSector").parentElement.style.display = "none";
+          
+              // Título personalizado
+              const nombre = `${usuarioActual.nombre} ${usuarioActual.apellido}`;
+              const sector = usuarioActual.sector || "";
+              const legajo = usuarioActual.legajo || "";
+              document.getElementById("tituloResumen").innerText = `📅 Resumen de ${nombre} – ${sector} (Legajo: ${legajo})`;
+          
+              // Ocultar columnas innecesarias
+              document.querySelectorAll(".th-legajo, .th-apellido, .th-nombre, .th-sector").forEach(th => th.remove());
+            }
+          
+            cargarResumenMensual();
+          });
+
+        async function cargarSectoresUnicos() {
+            const snapshot = await db.collection("usuarios").get();
+            const sectores = new Set();
+            snapshot.forEach(doc => {
+                const s = doc.data().sector?.trim();
+                if (s) sectores.add(s);
+            });
+
+            const select = document.getElementById("filtroSector");
+            sectores.forEach(sec => {
+                const opt = document.createElement("option");
+                opt.value = sec;
+                opt.textContent = sec;
+                select.appendChild(opt);
+            });
+        }
+
+        async function cargarResumenMensual() {
+            const mes = document.getElementById("mesSeleccionado").value;
+            const filtroSector = document.getElementById("filtroSector").value;
+            if (!mes) return alert("Seleccioná un mes");
+
+            const [anio, mesNum] = mes.split("-").map(Number);
+            const diasDelMes = getDiasHabilesDelMes(anio, mesNum - 1);
+
+            let usuariosSnap;
+            if (usuarioActual.rol === "admin") {
+                usuariosSnap = await db.collection("usuarios").get();
+            } else {
+                usuariosSnap = [{ id: usuarioActual.legajo, data: () => usuarioActual }];
+            }
+
+            const asistenciasSnap = await db.collection("asistencias")
+                .where("fecha", ">=", diasDelMes[0])
+                .where("fecha", "<=", diasDelMes[diasDelMes.length - 1])
+                .get();
+
+            const asistencias = {};
+            asistenciasSnap.forEach(doc => {
+                const d = doc.data();
+                if (!asistencias[d.legajo]) asistencias[d.legajo] = {};
+                asistencias[d.legajo][d.fecha] = d;
+            });
+
+            const tbody = document.getElementById("tbodyResumenMensual");
+            tbody.innerHTML = "";
+
+            usuariosSnap.forEach(doc => {
+                const u = typeof doc.data === "function" ? doc.data() : doc;
+                const legajo = u.legajo;
+                const rol = u.rol || "usuario";
+                if (usuarioActual.rol === "admin") {
+                    if (filtroSector !== "Todos" && u.sector !== filtroSector) return;
+                }
+
+                let completos = 0, parciales = 0, incompletos = 0, ausentes = 0, horas = 0;
+                const esperado = u.horarios || {};
+
+                diasDelMes.forEach(fecha => {
+                    const diaSemana = new Date(fecha).toLocaleDateString("es-AR", { weekday: 'long' });
+                    const horario = esperado[capitalizar(diaSemana)];
+                    const a = asistencias[legajo]?.[fecha];
+
+                    if (!horario) return;
+                    if (!a) return ausentes++;
+                    if (!a.ingreso || !a.egreso) return incompletos++;
+
+                    const t1 = horario.entrada;
+                    const t2 = horario.salida;
+                    const ingreso = a.ingreso.hora;
+                    const egreso = a.egreso.hora;
+                    const llegoTarde = ingreso > t1;
+                    const salioAntes = egreso < t2;
+
+                    if (llegoTarde || salioAntes) parciales++;
+                    else completos++;
+
+                    horas += a.horasTrabajadas || 0;
+                });
+
+                const totalDias = completos + parciales + incompletos + ausentes;
+                const cumplimiento = totalDias > 0 ? Math.round((completos / totalDias) * 100) : 0;
+
+                tbody.innerHTML += `
+                <tr>
+                  ${usuarioActual.rol === "admin" ? `
+                    <td>${u.legajo}</td>
+                    <td>${u.apellido}</td>
+                    <td>${u.nombre}</td>
+                    <td>${u.sector}</td>
+                  ` : ""}
+                  <td>${completos}</td>
+                  <td>${parciales}</td>
+                  <td>${incompletos}</td>
+                  <td>${ausentes}</td>
+                  <td>${horas.toFixed(2)}</td>
+                  <td>${cumplimiento}%</td>
+                </tr>`;
+            });
+        }
+
+        function getDiasHabilesDelMes(anio, mes) {
+            const dias = [];
+            const ultimo = new Date(anio, mes + 1, 0).getDate();
+            for (let d = 1; d <= ultimo; d++) {
+                const fecha = new Date(anio, mes, d);
+                const dia = fecha.getDay();
+                if (dia !== 0 && dia !== 6) {
+                    dias.push(fecha.toISOString().split("T")[0]);
+                }
+            }
+            return dias;
+        }
+
+        function capitalizar(palabra) {
+            return palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase();
+        }
+
+        function exportarExcel() {
+            let tabla = document.getElementById("tablaResumenMensual");
+
+            if (usuarioActual.rol !== "admin") {
+                // Crear una tabla temporal solo con las columnas visibles
+                const filas = tabla.querySelectorAll("tr");
+                const tablaTemp = document.createElement("table");
+
+                filas.forEach((fila, idx) => {
+                    const filaNueva = tablaTemp.insertRow();
+                    const celdas = fila.querySelectorAll("th, td");
+                    for (let i = 5; i < celdas.length; i++) {  // A partir de columna 5 (índice base 0)
+                        const celdaNueva = filaNueva.insertCell();
+                        celdaNueva.innerHTML = celdas[i].innerHTML;
+                    }
+                });
+
+                const wb = XLSX.utils.table_to_book(tablaTemp, { sheet: "Resumen mensual" });
+                XLSX.writeFile(wb, "resumen_mensual.xlsx");
+            } else {
+                const wb = XLSX.utils.table_to_book(tabla, { sheet: "Resumen mensual" });
+                XLSX.writeFile(wb, "resumen_mensual.xlsx");
+            }
+        }
+
+        function imprimirResumen() {
+            const original = document.body.innerHTML;
+            const tabla = document.getElementById("tablaResumenMensual").outerHTML;
+            document.body.innerHTML = `<h3>${document.getElementById("tituloResumen").innerText}</h3>${tabla}`;
+            window.print();
+            document.body.innerHTML = original;
+            location.reload();
+        }
+    </script>
+</body>
+
+</html>

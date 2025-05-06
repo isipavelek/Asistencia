@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Registrar Asistencia</title>
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    body {
+      background-color: #f8f9fa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 400px;
+      padding: 2rem;
+      border-radius: 0.75rem;
+      box-shadow: 0 0 15px rgba(0,0,0,0.05);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card text-center">
+    <h4 class="mb-3">📝 Registro de Asistencia</h4>
+
+    <div class="mb-3">
+      <label class="form-label">Legajo</label>
+      <input type="text" id="legajo" class="form-control" placeholder="Ingresá tu legajo" />
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Justificación (opcional)</label>
+      <input type="text" id="justificacion" class="form-control" placeholder="Ej: Llegué tarde por..." />
+    </div>
+
+    <div id="mensaje" class="text-danger mb-3"></div>
+
+    <button onclick="registrarAsistencia()" class="btn btn-primary w-100">Registrar</button>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyC4v9h8eXWRBnzTD-VDDludynd5nzOv4xc",
+      authDomain: "est-utn-c0988.firebaseapp.com",
+      projectId: "est-utn-c0988",
+      storageBucket: "est-utn-c0988.firebasestorage.app",
+      messagingSenderId: "788767016042",
+      appId: "1:788767016042:web:8a480a74e3b1ef0de97613"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const puntoReferencia = { lat: -34.583275, lng: -58.727562 }; // Coordenadas de la escuela
+    const radioPermitido = 1000; // metros
+
+    function calcularDistancia(lat1, lng1, lat2, lng2) {
+      const R = 6371e3; // Radio de la Tierra en metros
+      const rad = x => x * Math.PI / 180;
+      const dLat = rad(lat2 - lat1);
+      const dLng = rad(lng2 - lng1);
+      const a = Math.sin(dLat/2)**2 + Math.cos(rad(lat1)) * Math.cos(rad(lat2)) * Math.sin(dLng/2)**2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    async function registrarAsistencia() {
+      const legajo = document.getElementById("legajo").value.trim();
+      const justificacion = document.getElementById("justificacion").value.trim();
+      const mensaje = document.getElementById("mensaje");
+
+      if (!legajo) {
+        mensaje.textContent = "⚠️ Ingresá tu legajo.";
+        return;
+      }
+
+      try {
+        const usuarioSnap = await db.collection("usuarios").where("legajo", "==", legajo).get();
+        if (usuarioSnap.empty) {
+          mensaje.textContent = "❌ Legajo no encontrado.";
+          return;
+        }
+
+        const persona = usuarioSnap.docs[0].data();
+
+        navigator.geolocation.getCurrentPosition(async pos => {
+          const { latitude, longitude } = pos.coords;
+          const distancia = calcularDistancia(latitude, longitude, puntoReferencia.lat, puntoReferencia.lng);
+
+          if (distancia > radioPermitido) {
+            mensaje.textContent = "❌ Estás fuera del radio permitido para registrar asistencia.";
+            return;
+          }
+
+          const fechaHoy = new Date().toISOString().split("T")[0];
+          const horaAhora = new Date().toTimeString().split(" ")[0];
+
+          const asistenciaRef = db.collection("asistencias").doc(`${legajo}_${fechaHoy}`);
+          const doc = await asistenciaRef.get();
+
+          if (!doc.exists) {
+            // Registrar ingreso
+            await asistenciaRef.set({
+              legajo,
+              nombre: persona.nombre,
+              apellido: persona.apellido,
+              sector: persona.sector,
+              fecha: fechaHoy,
+              ingreso: {
+                hora: horaAhora,
+                ubicacion: { lat: latitude, lng: longitude }
+              },
+              justificacion,
+              estado: "Ingreso registrado"
+            });
+            mensaje.textContent = "✅ Ingreso registrado correctamente.";
+            mensaje.className = "text-success mb-3";
+          } else {
+            const data = doc.data();
+            if (data.egreso) {
+              mensaje.textContent = "ℹ️ Ya registraste ingreso y egreso hoy.";
+              mensaje.className = "text-info mb-3";
+              return;
+            }
+
+            // Registrar egreso y calcular horas
+            const [h1, m1] = data.ingreso.hora.split(":").map(Number);
+            const [h2, m2] = horaAhora.split(":").map(Number);
+            const minutos = (h2 * 60 + m2) - (h1 * 60 + m1);
+            const horas = (minutos / 60).toFixed(2);
+
+            await asistenciaRef.update({
+              egreso: {
+                hora: horaAhora,
+                ubicacion: { lat: latitude, lng: longitude }
+              },
+              horasTrabajadas: parseFloat(horas),
+              estado: "Jornada registrada"
+            });
+
+            mensaje.textContent = `✅ Egreso registrado. Total: ${horas} horas.`;
+            mensaje.className = "text-success mb-3";
+          }
+
+        }, () => {
+          mensaje.textContent = "❌ No se pudo obtener la ubicación.";
+        });
+
+      } catch (err) {
+        mensaje.textContent = "❌ Error al registrar asistencia.";
+      }
+    }
+  </script>
+
+</body>
+</html>

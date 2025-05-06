@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Menú Principal</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <style>
+    body {
+      background-color: #f8f9fa;
+      padding: 3rem;
+    }
+    .container {
+      max-width: 400px;
+    }
+    .btn-menu {
+      width: 100%;
+      padding-top: 0.75rem;
+      padding-bottom: 0.75rem;
+      font-size: 1.1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container text-center">
+    <h2 class="mb-4">📋 Panel de Asistencia</h2>
+    <div class="d-grid gap-3">
+      <a href="asistencia.html" class="btn btn-primary btn-menu">📝 Registrar Asistencia</a>
+      <a href="visor.html" class="btn btn-secondary btn-menu">📖 Ver Asistencias</a>
+      <div id="botonAdmin"></div>
+      <a href="resumen_diario.html" class="btn btn-warning btn-menu">📅 Resumen Diario</a>
+      <a href="resumen_mensual.html" class="btn btn-dark btn-menu">📆 Resumen Mensual</a>
+      <button class="btn btn-outline-danger btn-menu" onclick="cerrarSesion()">🔒 Cerrar Sesión</button>
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyC4v9h8eXWRBnzTD-VDDludynd5nzOv4xc",
+      authDomain: "est-utn-c0988.firebaseapp.com",
+      projectId: "est-utn-c0988",
+      storageBucket: "est-utn-c0988.firebasestorage.app",
+      messagingSenderId: "788767016042",
+      appId: "1:788767016042:web:8a480a74e3b1ef0de97613"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    auth.onAuthStateChanged(async user => {
+      if (!user) return window.location.href = "login.html";
+
+      const doc = await db.collection("usuarios").doc(user.uid).get();
+      if (doc.exists && doc.data().rol === "admin") {
+        document.getElementById("botonAdmin").innerHTML = `
+          <a href="personas_admin.html" class="btn btn-info btn-menu">👥 Administrar Personas</a>`;
+      }
+    });
+
+    function cerrarSesion() {
+      auth.signOut().then(() => window.location.href = "login.html");
+    }
+  </script>
+</body>
+</html>

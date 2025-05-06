@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Visor de Asistencias</title>
+
+    <!-- Estilos y librerías -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1300px;
+        }
+
+        .form-control,
+        .form-select {
+            min-width: 160px;
+        }
+    </style>
+</head>
+
+<!-- … HEAD igual al anterior … -->
+
+<body>
+    <div class="container">
+        <h3 class="mb-4" id="titulo">📖 Visor de Asistencias</h3>
+
+        <div class="row g-3 mb-3 align-items-end" id="filtros">
+            <div class="col-md-auto" id="grupoFiltroTexto">
+                <label class="form-label">🔍 Buscar</label>
+                <input type="text" id="filtroTexto" class="form-control" placeholder="Nombre, legajo, sector..." />
+            </div>
+            <div class="col-md-auto">
+                <label class="form-label">📅 Desde</label>
+                <input type="date" id="fechaDesde" class="form-control" />
+            </div>
+            <div class="col-md-auto">
+                <label class="form-label">📅 Hasta</label>
+                <input type="date" id="fechaHasta" class="form-control" />
+            </div>
+            <div class="col-md-auto d-grid">
+                <button class="btn btn-primary" onclick="cargarAsistencias()">🔄 Buscar</button>
+            </div>
+            <div class="col-md-auto d-grid">
+                <button class="btn btn-success" onclick="exportarExcel()">📁 Exportar a Excel</button>
+            </div>
+            <div class="col-md-auto d-grid">
+                <a href="menu.html" class="btn btn-outline-secondary">🏠 Menú Principal</a>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover" id="tablaAsistencias">
+                <thead class="table-dark" id="tablaHeader">
+                    <tr id="filaHeader">
+                        <th>Fecha</th>
+                        <th>Hora</th>
+                        <th class="th-legajo">Legajo</th>
+                        <th class="th-nombre">Nombre</th>
+                        <th class="th-sector">Sector</th>
+                        <th>Estado</th>
+                        <th>Justificación</th>
+                        <th>Ubicación</th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyAsistencias"></tbody>
+            </table>
+        </div>
+
+        <script>
+            const firebaseConfig = {
+                apiKey: "AIzaSyC4v9h8eXWRBnzTD-VDDludynd5nzOv4xc",
+                authDomain: "est-utn-c0988.firebaseapp.com",
+                projectId: "est-utn-c0988",
+                storageBucket: "est-utn-c0988.firebasestorage.app",
+                messagingSenderId: "788767016042",
+                appId: "1:788767016042:web:8a480a74e3b1ef0de97613"
+            };
+
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+            const auth = firebase.auth();
+
+            let usuarioActual = null;
+
+            auth.onAuthStateChanged(async user => {
+                if (!user) return window.location.href = "login.html";
+
+                const doc = await db.collection("usuarios").doc(user.uid).get();
+                if (!doc.exists) {
+                    alert("❌ Usuario no registrado");
+                    return window.location.href = "menu.html";
+                }
+
+                usuarioActual = doc.data();
+
+                const hoy = new Date();
+                const hace7 = new Date();
+                hace7.setDate(hoy.getDate() - 7);
+                document.getElementById("fechaDesde").value = hace7.toISOString().split("T")[0];
+                document.getElementById("fechaHasta").value = hoy.toISOString().split("T")[0];
+
+                if (usuarioActual.rol !== "admin") {
+                    document.getElementById("grupoFiltroTexto").style.display = "none";
+                    const nombreCompleto = `${usuarioActual.nombre} ${usuarioActual.apellido}`;
+                    const legajo = usuarioActual.legajo;
+                    document.getElementById("titulo").textContent = `📖 Mis Asistencias – ${nombreCompleto} (Legajo: ${legajo})`;
+
+                    // Ocultar columnas de Nombre, Sector y Legajo
+                    document.querySelectorAll(".th-nombre, .th-sector, .th-legajo").forEach(th => th.remove());
+                }
+
+                cargarAsistencias();
+            });
+
+            async function cargarAsistencias() {
+                const filtro = document.getElementById("filtroTexto")?.value?.toLowerCase() || "";
+                const desde = document.getElementById("fechaDesde").value;
+                const hasta = document.getElementById("fechaHasta").value;
+                const tbody = document.getElementById("tbodyAsistencias");
+                tbody.innerHTML = "";
+
+                if (!desde || !hasta) return alert("Seleccioná un rango de fechas válido.");
+
+                const desdeId = "00000_" + desde;
+                const hastaId = "99999_" + hasta;
+
+                const snapshot = await db.collection("asistencias")
+                    .orderBy(firebase.firestore.FieldPath.documentId())
+                    .startAt(desdeId)
+                    .endAt(hastaId)
+                    .get();
+
+                snapshot.forEach(doc => {
+                    const d = doc.data();
+                    const id = doc.id;
+                    const partes = id.split("_");
+                    const legajo = partes[0];
+                    const fecha = partes[1];
+
+                    if (usuarioActual.rol !== "admin" && legajo !== usuarioActual.legajo) return;
+
+                    const nombre = d.nombre || "";
+                    const apellido = d.apellido || "";
+                    const sector = d.sector || "";
+                    const estado = d.estado || "";
+                    const justificacion = d.justificacion || "";
+
+                    const ingreso = d.ingreso || {};
+                    const egreso = d.egreso || {};
+
+                    const textoFiltro = `${legajo} ${nombre} ${apellido} ${sector}`.toLowerCase();
+                    if (usuarioActual.rol === "admin" && filtro && !textoFiltro.includes(filtro)) return;
+
+                    if (ingreso.hora) {
+                        tbody.innerHTML += `
+                  <tr>
+                    <td>${fecha}</td>
+                    <td>${ingreso.hora}</td>
+                    ${usuarioActual.rol === "admin" ? `<td>${legajo}</td><td>${nombre} ${apellido}</td><td>${sector}</td>` : ""}
+                    <td class="${estado.includes('Fuera') ? 'text-danger' : 'text-success'}">Ingreso</td>
+                    <td>${justificacion || '-'}</td>
+                    <td><a href="https://www.google.com/maps?q=${ingreso.ubicacion?.lat},${ingreso.ubicacion?.lng}" target="_blank">🌍 Ver</a></td>
+                  </tr>`;
+                    }
+
+                    if (egreso.hora) {
+                        tbody.innerHTML += `
+                  <tr>
+                    <td>${fecha}</td>
+                    <td>${egreso.hora}</td>
+                    ${usuarioActual.rol === "admin" ? `<td>${legajo}</td><td>${nombre} ${apellido}</td><td>${sector}</td>` : ""}
+                    <td class="${estado.includes('Fuera') ? 'text-danger' : 'text-success'}">Egreso</td>
+                    <td>${justificacion || '-'}</td>
+                    <td><a href="https://www.google.com/maps?q=${egreso.ubicacion?.lat},${egreso.ubicacion?.lng}" target="_blank">🌍 Ver</a></td>
+                  </tr>`;
+                    }
+                });
+            }
+
+            function exportarExcel() {
+                const tabla = document.getElementById("tablaAsistencias");
+                const wb = XLSX.utils.table_to_book(tabla, { sheet: "Asistencias" });
+                XLSX.writeFile(wb, "asistencias.xlsx");
+            }
+        </script>
+</body>
+
+</html>
