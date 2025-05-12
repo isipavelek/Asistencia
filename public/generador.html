@@ -1,0 +1,41 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Generar Word</title>
+</head>
+<body>
+  <h1>Generador de Documento Word</h1>
+  <button onclick="generarWord()">📄 Descargar como Word</button>
+
+  <script>
+    function generarWord() {
+      const contenido = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office'
+              xmlns:w='urn:schemas-microsoft-com:office:word'
+              xmlns='http://www.w3.org/TR/REC-html40'>
+          <head><meta charset="utf-8"><title>Mi Word</title></head>
+          <body>
+            <h1>Hola desde el navegador</h1>
+            <p>Este documento fue generado automáticamente usando HTML y JavaScript.</p>
+          </body>
+        </html>
+      `;
+
+      const blob = new Blob([contenido], {
+        type: 'application/msword;charset=utf-8'
+      });
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'documento.doc';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>

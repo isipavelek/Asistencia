@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>🔄 Cargar Datos de Usuario</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 2rem;
+        }
+
+        .slot-row {
+            align-items: center;
+        }
+
+        #legajo {
+            max-width: 150px;
+        }
+
+        .schedule-table th,
+        .schedule-table td {
+            text-align: center;
+            vertical-align: top;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container py-4">
+        <h2 class="mb-4">🔄 Cargar Datos de Usuario</h2>
+
+        <!-- Tabs -->
+        <ul class="nav nav-tabs" id="cargosTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab-personales-tab" data-bs-toggle="tab"
+                    data-bs-target="#tab-personales" type="button" role="tab">Datos Personales</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-inspt-tab" data-bs-toggle="tab" data-bs-target="#tab-inspt"
+                    type="button" role="tab">Cargo INSPT</button>
+            </li>
+            <li class="ms-auto">
+                <button id="addTabBtn" class="btn btn-primary btn-sm">+ Agregar pestaña</button>
+            </li>
+        </ul>
+
+        <div class="tab-content border border-top-0 p-4" id="cargosTabContent">
+            <!-- Datos Personales -->
+            <div class="tab-pane fade show active" id="tab-personales" role="tabpanel">
+                <form id="form-personales">
+                    <div class="row g-3 mb-3">
+                        <div class="col-auto">
+                            <label class="form-label" for="legajo">Legajo</label>
+                            <input type="text" id="legajo" class="form-control" maxlength="10" placeholder="Legajo">
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label" for="nombre">Nombre</label>
+                            <input type="text" id="nombre" class="form-control">
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label" for="apellido">Apellido</label>
+                            <input type="text" id="apellido" class="form-control">
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label" for="dni">DNI</label>
+                            <input type="text" id="dni" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="fechaNacimiento">Fecha de nacimiento</label>
+                            <input type="date" id="fechaNacimiento" class="form-control">
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label" for="emailPersonal">Email</label>
+                            <input type="email" id="emailPersonal" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="telefono">Teléfono</label>
+                            <input type="text" id="telefono" class="form-control">
+                        </div>
+                    </div>
+                    <fieldset class="border p-3 mb-3">
+                        <legend class="float-none w-auto px-2">Domicilio</legend>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label" for="domicilio">Calle</label>
+                                <input type="text" id="domicilio" class="form-control" placeholder="Calle">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label" for="numero">Número</label>
+                                <input type="text" id="numero" class="form-control" placeholder="Nº">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label" for="codigoPostal">C. Postal</label>
+                                <input type="text" id="codigoPostal" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="localidad">Localidad</label>
+                                <input type="text" id="localidad" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="provincia">Provincia</label>
+                                <input type="text" id="provincia" class="form-control">
+                            </div>
+                        </div>
+                    </fieldset>
+                </form>
+            </div>
+            <!-- Cargo INSPT fijo -->
+            <div class="tab-pane fade" id="tab-inspt" role="tabpanel" data-type="inspt">
+                <form id="form-inspt">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label" for="insptFunciones">Funciones</label>
+                            <input type="text" id="insptFunciones" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="insptIngreso">Ingreso</label>
+                            <input type="date" id="insptIngreso" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-check form-check-inline mb-3">
+                        <input type="checkbox" id="insptNuevo" class="form-check-input">
+                        <label class="form-check-label" for="insptNuevo">Cargo nuevo</label>
+                    </div>
+                    <div class="form-check form-check-inline mb-3">
+                        <input type="checkbox" id="insptLicencia" class="form-check-input">
+                        <label class="form-check-label" for="insptLicencia">Licencia</label>
+                    </div>
+                    <div class="mb-3">
+                        <h5>Horario</h5>
+                        <div class="schedule-container">
+                            <table class="table table-bordered schedule-table">
+                                <thead>
+                                    <tr>
+                                        <th>Lun<br><button type="button" class="btn btn-sm btn-outline-success add-day"
+                                                data-day="lunes">+</button></th>
+                                        <th>Mar<br><button type="button" class="btn btn-sm btn-outline-success add-day"
+                                                data-day="martes">+</button></th>
+                                        <th>Mié<br><button type="button" class="btn btn-sm btn-outline-success add-day"
+                                                data-day="miercoles">+</button></th>
+                                        <th>Jue<br><button type="button" class="btn btn-sm btn-outline-success add-day"
+                                                data-day="jueves">+</button></th>
+                                        <th>Vie<br><button type="button" class="btn btn-sm btn-outline-success add-day"
+                                                data-day="viernes">+</button></th>
+                                        <th>Sáb<br><button type="button" class="btn btn-sm btn-outline-success add-day"
+                                                data-day="sabado">+</button></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="schedule-day" data-day="lunes"></td>
+                                        <td class="schedule-day" data-day="martes"></td>
+                                        <td class="schedule-day" data-day="miercoles"></td>
+                                        <td class="schedule-day" data-day="jueves"></td>
+                                        <td class="schedule-day" data-day="viernes"></td>
+                                        <td class="schedule-day" data-day="sabado"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="text-end mt-3">
+            <button id="saveBtn" class="btn btn-success">Guardar datos</button>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="addTabModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Agregar nueva pestaña</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="newTabType" class="form-label">Tipo de pestaña</label>
+                            <select id="newTabType" class="form-select">
+                                <option value="inspt">Cargo INSPT</option>
+                                <option value="reparticion">Otra repartición</option>
+                                <option value="tarea">Tarea/Actividad</option>
+                                <option value="pasividad">Pasividad</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="newTabLabel" class="form-label">Etiqueta</label>
+                            <input type="text" id="newTabLabel" class="form-control" placeholder="Nombre descriptivo">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button id="confirmAddTab" type="button" class="btn btn-primary">Agregar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyC4v9h8eXWRBnzTD-VDDludynd5nzOv4xc", authDomain: "est-utn-c0988.firebaseapp.com", projectId: "est-utn-c0988", storageBucket: "est-utn-c0988.firebasestorage.app", messagingSenderId: "788767016042", appId: "1:788767016042:web:8a480a74e3b1ef0de97613", measurementId: "G-LG1H6JGJDH" };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth(), db = firebase.firestore(); let currentUser = null;
+        auth.onAuthStateChanged(u => { if (!u) return window.location.href = 'login.html'; currentUser = u; init(); });
+        function init() {
+            ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'].forEach(addDayTemplate);
+            document.getElementById('addTabBtn').addEventListener('click', () =>
+                new bootstrap.Modal(document.getElementById('addTabModal')).show());
+            document.getElementById('confirmAddTab').addEventListener('click', addTabFromModal);
+            document.getElementById('saveBtn').addEventListener('click', saveData);
+            loadData();
+        }
+
+        function defaultIngreso() { return new Date().toISOString().substr(0, 10); } 
+async function loadData() {
+    const uref = db.collection('usuarios').doc(currentUser.uid);
+    const doc = await uref.get();
+    if (doc.exists) fillPersonal(doc.data());
+
+    const cs = await uref.collection('cargos').get();
+    let firstINSPTdone = false;
+
+    cs.forEach(snap => {
+        const c = snap.data();
+        c._id = snap.id;
+
+        if (c.type === 'inspt' && !firstINSPTdone) {
+            // Llenar el INSPT fijo
+            fillINSPT(c);
+            firstINSPTdone = true;
+        } else {
+            // Agregar como pestaña dinámica
+            addDynamicTab(c.type, c.label || 'Cargo adicional', c);
+        }
+    });
+}
+
+        function fillPersonal(d) { document.getElementById('legajo').value = d.legajo || '';['nombre', 'apellido', 'dni', 'fechaNacimiento', 'email', 'telefono', 'domicilio', 'numero', 'localidad', 'provincia', 'codigoPostal'].forEach(id => { const el = document.getElementById(id === 'email' ? 'emailPersonal' : id); if (el) el.value = d[id] || ''; }); }
+        function fillINSPT(c) { document.getElementById('insptFunciones').value = c.funciones || ''; document.getElementById('insptIngreso').value = c.ingreso || defaultIngreso(); document.getElementById('insptNuevo').checked = c.nuevo || false; document.getElementById('insptLicencia').checked = c.licencia || false; setSchedule('tab-inspt', c.horario); }
+        // Tabs dinámicas
+        function addTabFromModal() { const t = document.getElementById('newTabType').value, l = document.getElementById('newTabLabel').value.trim() || document.querySelector('#newTabType option:checked').text; addDynamicTab(t, l); bootstrap.Modal.getInstance(document.getElementById('addTabModal')).hide(); document.getElementById('newTabLabel').value = ''; }
+        function addDynamicTab(type, label, cargo) { const ul = document.getElementById('cargosTab'), cont = document.getElementById('cargosTabContent'), id = `tab-${type}-${Date.now()}`; const li = document.createElement('li'); li.className = 'nav-item'; li.setAttribute('role', 'presentation'); li.innerHTML = `<button class="nav-link" id="${id}-tab" data-bs-toggle="tab" data-bs-target="#${id}" type="button" role="tab">${label}</button><button type="button" class="btn-close ms-1" aria-label="Cerrar"></button>`; ul.insertBefore(li, document.querySelector('#addTabBtn').parentNode); const pane = document.createElement('div'); pane.className = 'tab-pane fade'; pane.id = id; pane.setAttribute('role', 'tabpanel'); pane.dataset.type = type; pane.innerHTML = getFormHTML(type, id); cont.appendChild(pane); new bootstrap.Tab(document.getElementById(`${id}-tab`)).show(); li.querySelector('.btn-close').onclick = e => { li.remove(); pane.remove(); document.getElementById('tab-personales-tab').click() }; if (cargo) populateDynamic(id, cargo); }
+
+        function getFormHTML(type, p) {
+            let h = `<form id="form-${p}">`;
+
+            if (type === 'inspt') {
+                h += `
+      <div class="row g-3 mb-3">
+        <div class="col-md-8">
+          <label class="form-label" for="${p}-funciones">Funciones</label>
+          <input type="text" id="${p}-funciones" class="form-control">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="${p}-ingreso">Ingreso</label>
+          <input type="date" id="${p}-ingreso" class="form-control" value="${defaultIngreso()}">
+        </div>
+      </div>
+      <div class="form-check form-check-inline mb-3">
+        <input type="checkbox" id="${p}-nuevo" class="form-check-input">
+        <label class="form-check-label" for="${p}-nuevo">Cargo nuevo</label>
+      </div>
+      <div class="form-check form-check-inline mb-3">
+        <input type="checkbox" id="${p}-licencia" class="form-check-input">
+        <label class="form-check-label" for="${p}-licencia">Licencia</label>
+      </div>
+      <div class="mb-3">
+        <h5>Horario</h5>
+        <table class="table table-bordered schedule-table">
+          <thead>
+            <tr>
+              ${['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'].map(d => `
+                <th class="text-capitalize">${d.slice(0, 3)}<br><button type="button" class="btn btn-sm btn-outline-success add-day" data-day="${d}" data-scope="${p}">+</button></th>
+              `).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              ${['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'].map(d => `
+                <td class="schedule-day" data-day="${d}" data-scope="${p}"></td>
+              `).join('')}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    `;
+            }
+
+            // Puedes dejar los demás tipos como ya están definidos
+
+            h += `</form>`;
+            return h;
+        }
+
+
+        function extractSchedule(scope = '') {
+            const dias = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+            const horarios = [];
+
+            dias.forEach(dia => {
+                const selector = scope
+                    ? `.schedule-day[data-day="${dia}"][data-scope="${scope}"]`
+                    : `.schedule-day[data-day="${dia}"]:not([data-scope])`;
+
+                const contenedor = document.querySelector(selector);
+                if (!contenedor) return;
+
+                const slots = [];
+                contenedor.querySelectorAll('.slot-row').forEach(row => {
+                    const from = row.querySelector('.from-slot')?.value;
+                    const to = row.querySelector('.to-slot')?.value;
+                    if (from && to) slots.push({ from, to });
+                });
+
+                if (slots.length) horarios.push({ day: dia, slots });
+            });
+
+            return horarios;
+        }
+
+        function populateDynamic(p, c) { const t = c.type; if (t === 'reparticion') { document.getElementById(`${p}-reparticion`).value = c.reparticion || ''; document.getElementById(`${p}-calle`).value = c.calle || ''; document.getElementById(`${p}-numero`).value = c.numero || ''; document.getElementById(`${p}-localidad`).value = c.localidad || ''; document.getElementById(`${p}-provincia`).value = c.provincia || ''; document.getElementById(`${p}-funciones`).value = c.funciones || ''; document.getElementById(`${p}-ingreso`).value = c.ingreso || defaultIngreso(); setSchedule(p, c.horario); } if (t === 'tarea') { document.getElementById(`${p}-empleador`).value = c.empleador || ''; document.getElementById(`${p}-lugar`).value = c.lugar || ''; document.getElementById(`${p}-funciones`).value = c.funciones || ''; document.getElementById(`${p}-ingreso`).value = c.ingreso || defaultIngreso(); setSchedule(p, c.horario); } if (t === 'pasividad') { document.getElementById(`${p}-causa`).value = c.causa || ''; document.getElementById(`${p}-regimen`).value = c.regimen || ''; document.getElementById(`${p}-desde`).value = c.desde || defaultIngreso(); document.getElementById(`${p}-institucion`).value = c.institucion || ''; } }
+
+        // Horarios
+
+        document.addEventListener('click', e => {
+            if (e.target.classList.contains('add-day')) {
+                const day = e.target.dataset.day;
+                const scope = e.target.dataset.scope || '';
+                addDayTemplate(day, scope);
+            }
+            if (e.target.classList.contains('remove-slot')) {
+                e.target.closest('.slot-row').remove();
+            }
+        });
+
+        function addDayTemplate(day, scope = '') {
+            const selector = scope ? `.schedule-day[data-day="${day}"][data-scope="${scope}"]` : `.schedule-day[data-day="${day}"]`;
+            const cell = document.querySelector(selector);
+            if (!cell) return;
+            const row = document.createElement('div');
+            row.className = 'slot-row d-flex align-items-center flex-wrap gap-2 justify-content-center';
+            row.innerHTML = `
+    <div class="d-flex align-items-center">
+      <label class="me-1 mb-0">Desde</label>
+      <input type="time" class="form-control form-control-sm me-2 from-slot" style="width: 110px;">
+    </div>
+    <div class="d-flex align-items-center">
+      <label class="me-1 mb-0">Hasta</label>
+      <input type="time" class="form-control form-control-sm me-2 to-slot" style="width: 110px;">
+    </div>
+    <button class="btn btn-sm btn-outline-danger remove-slot" type="button">🗑️</button>
+  `;
+            cell.appendChild(row);
+        }
+
+        // Guardar
+        async function saveData() {
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = true;
+            try {
+                const uref = db.collection('usuarios').doc(currentUser.uid);
+
+                // Datos personales
+                const per = {
+                    legajo: document.getElementById('legajo').value,
+                    nombre: document.getElementById('nombre').value,
+                    apellido: document.getElementById('apellido').value,
+                    dni: document.getElementById('dni').value,
+                    fechaNacimiento: document.getElementById('fechaNacimiento').value,
+                    email: document.getElementById('emailPersonal').value,
+                    telefono: document.getElementById('telefono').value,
+                    domicilio: document.getElementById('domicilio').value,
+                    numero: document.getElementById('numero').value,
+                    localidad: document.getElementById('localidad').value,
+                    provincia: document.getElementById('provincia').value,
+                    codigoPostal: document.getElementById('codigoPostal').value
+                };
+
+                await uref.set(per, { merge: true });
+
+                // Borrar cargos anteriores
+                const cs = await uref.collection('cargos').get();
+                const batch = db.batch();
+                cs.forEach(snap => batch.delete(snap.ref));
+                await batch.commit();
+
+                // Guardar cargo INSPT
+                const insptCargo = {
+                    type: 'inspt',
+                    funciones: document.getElementById('insptFunciones').value,
+                    ingreso: document.getElementById('insptIngreso').value,
+                    nuevo: document.getElementById('insptNuevo').checked,
+                    licencia: document.getElementById('insptLicencia').checked,
+                    horario: extractSchedule()
+                };
+
+                await uref.collection('cargos').add(insptCargo);
+
+                // Guardar cargos dinámicos
+                const panes = document.querySelectorAll('.tab-pane[data-type]');
+                for (const pane of panes) {
+                    const type = pane.dataset.type;
+                    const id = pane.id;
+                    const form = document.getElementById(`form-${id}`);
+                    if (!form) continue;
+
+                    const cargo = { type };
+
+                    if (type === 'inspt') {
+                        cargo.funciones = document.getElementById(`${id}-funciones`).value;
+                        cargo.ingreso = document.getElementById(`${id}-ingreso`).value;
+                        cargo.nuevo = document.getElementById(`${id}-nuevo`).checked;
+                        cargo.licencia = document.getElementById(`${id}-licencia`).checked;
+                        cargo.horario = extractSchedule(id);
+                    } else if (type === 'reparticion') {
+                        cargo.reparticion = document.getElementById(`${id}-reparticion`).value;
+                        cargo.calle = document.getElementById(`${id}-calle`).value;
+                        cargo.numero = document.getElementById(`${id}-numero`).value;
+                        cargo.localidad = document.getElementById(`${id}-localidad`).value;
+                        cargo.provincia = document.getElementById(`${id}-provincia`).value;
+                        cargo.funciones = document.getElementById(`${id}-funciones`).value;
+                        cargo.ingreso = document.getElementById(`${id}-ingreso`).value;
+                        cargo.horario = extractSchedule(id);
+                    } else if (type === 'tarea') {
+                        cargo.empleador = document.getElementById(`${id}-empleador`).value;
+                        cargo.lugar = document.getElementById(`${id}-lugar`).value;
+                        cargo.funciones = document.getElementById(`${id}-funciones`).value;
+                        cargo.ingreso = document.getElementById(`${id}-ingreso`).value;
+                        cargo.horario = extractSchedule(id);
+                    } else if (type === 'pasividad') {
+                        cargo.causa = document.getElementById(`${id}-causa`).value;
+                        cargo.regimen = document.getElementById(`${id}-regimen`).value;
+                        cargo.desde = document.getElementById(`${id}-desde`).value;
+                        cargo.institucion = document.getElementById(`${id}-institucion`).value;
+                    }
+
+                    await uref.collection('cargos').add(cargo);
+                }
+
+                alert('Datos guardados correctamente');
+            } catch (e) {
+                alert('Error al guardar: ' + e.message);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+function setSchedule(scope = '', horario = []) {
+    horario.forEach(d => {
+        d.slots.forEach(s => {
+            const selector = scope
+                ? `.schedule-day[data-day="${d.day}"][data-scope="${scope}"]`
+                : `.schedule-day[data-day="${d.day}"]:not([data-scope])`;
+
+            const cell = document.querySelector(selector);
+            if (!cell) return;
+
+            const row = document.createElement('div');
+            row.className = 'slot-row d-flex align-items-center flex-wrap gap-2 justify-content-center';
+            row.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <label class="me-1 mb-0">Desde</label>
+                    <input type="time" class="form-control form-control-sm me-2 from-slot" style="width: 110px;" value="${s.from}">
+                </div>
+                <div class="d-flex align-items-center">
+                    <label class="me-1 mb-0">Hasta</label>
+                    <input type="time" class="form-control form-control-sm me-2 to-slot" style="width: 110px;" value="${s.to}">
+                </div>
+                <button class="btn btn-sm btn-outline-danger remove-slot" type="button">🗑️</button>
+            `;
+            cell.appendChild(row);
+        });
+    });
+}
+
+
+
+
+
+    </script>
+</body>
+
+</html>

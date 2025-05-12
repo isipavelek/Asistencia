@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Declaración Jurada de Cargos</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      padding: 2rem;
+      background-color: #f8f9fa;
+    }
+    .section-title {
+      margin-top: 2rem;
+      font-weight: bold;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h4 class="text-center mb-4">SECRETARÍA DE ESTADO DE HACIENDA<br>
+      Dirección General del Servicio Civil de la Nación</h4>
+    <h5 class="text-center mb-5">DECLARACIÓN JURADA DE LOS CARGOS Y ACTIVIDADES QUE DESEMPEÑA EL CAUSANTE</h5>
+
+    <!-- DATOS PERSONALES -->
+    <div class="section-title">1. Datos personales</div>
+    <div class="row mb-2">
+      <div class="col-md-4">
+        <label>DNI / LC / LE</label>
+        <input type="text" class="form-control">
+      </div>
+      <div class="col-md-4">
+        <label>Fecha de nacimiento</label>
+        <input type="date" class="form-control">
+      </div>
+    </div>
+
+    <div class="row mb-2">
+      <div class="col-md-6">
+        <label>Apellido</label>
+        <input type="text" class="form-control">
+      </div>
+      <div class="col-md-6">
+        <label>Nombres (sin abreviaturas)</label>
+        <input type="text" class="form-control">
+      </div>
+    </div>
+
+    <div class="section-title">2. Domicilio</div>
+    <div class="row mb-2">
+      <div class="col-md-5">
+        <label>Calle</label>
+        <input type="text" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <label>Número</label>
+        <input type="text" class="form-control">
+      </div>
+      <div class="col-md-5">
+        <label>Localidad</label>
+        <input type="text" class="form-control">
+      </div>
+    </div>
+    <div class="row mb-2">
+      <div class="col-md-4">
+        <label>Provincia</label>
+        <input type="text" class="form-control">
+      </div>
+      <div class="col-md-4">
+        <label>Mail</label>
+        <input type="email" class="form-control">
+      </div>
+      <div class="col-md-4">
+        <label>Teléfono</label>
+        <input type="text" class="form-control">
+      </div>
+    </div>
+
+    <!-- Agregar más secciones según necesidad... -->
+
+    <div class="section-title">Firmas</div>
+    <p>Lugar y Fecha</p>
+    <input type="text" class="form-control mb-3">
+
+    <p>Firma del declarante</p>
+    <input type="text" class="form-control mb-5">
+
+    <p>Firma del Jefe</p>
+    <input type="text" class="form-control">
+
+    <div class="mt-5">
+      <button class="btn btn-primary">Enviar</button>
+      <button class="btn btn-secondary" onclick="window.print()">Imprimir</button>
+    </div>
+  </div>
+
+</body>
+</html>

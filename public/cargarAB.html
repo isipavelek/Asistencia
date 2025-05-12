@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>🔄 Cargar Datos de Usuario</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 2rem;
+        }
+
+        .slot-row {
+            align-items: center;
+        }
+
+        #legajo {
+            max-width: 150px;
+        }
+
+        .schedule-table th,
+        .schedule-table td {
+            text-align: center;
+            vertical-align: top;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container py-4">
+        <h2 class="mb-4">🔄 Cargar Datos de Usuario</h2>
+
+        <!-- Tabs -->
+        <ul class="nav nav-tabs" id="cargosTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab-personales-tab" data-bs-toggle="tab"
+                    data-bs-target="#tab-personales" type="button" role="tab">Datos Personales</button>
+            </li>
+            <li class="ms-auto">
+                <button id="addTabBtn" class="btn btn-primary btn-sm">+ Agregar pestaña</button>
+            </li>
+        </ul>
+
+        <div class="tab-content border border-top-0 p-4" id="cargosTabContent">
+            <!-- Datos Personales -->
+            <div class="tab-pane fade show active" id="tab-personales" role="tabpanel">
+                <form id="form-personales">
+                    <div class="row g-3 mb-3">
+                        <div class="col-auto">
+                            <label class="form-label" for="legajo">Legajo</label>
+                            <input type="text" id="legajo" class="form-control" maxlength="10" placeholder="Legajo">
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label" for="nombre">Nombre</label>
+                            <input type="text" id="nombre" class="form-control">
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label" for="apellido">Apellido</label>
+                            <input type="text" id="apellido" class="form-control">
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label" for="dni">DNI</label>
+                            <input type="text" id="dni" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="fechaNacimiento">Fecha de nacimiento</label>
+                            <input type="date" id="fechaNacimiento" class="form-control">
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label" for="emailPersonal">Email</label>
+                            <input type="email" id="emailPersonal" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="telefono">Teléfono</label>
+                            <input type="text" id="telefono" class="form-control">
+                        </div>
+                    </div>
+                    <fieldset class="border p-3 mb-3">
+                        <legend class="float-none w-auto px-2">Domicilio</legend>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label" for="domicilio">Calle</label>
+                                <input type="text" id="domicilio" class="form-control" placeholder="Calle">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label" for="numero">Número</label>
+                                <input type="text" id="numero" class="form-control" placeholder="Nº">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label" for="codigoPostal">C. Postal</label>
+                                <input type="text" id="codigoPostal" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="localidad">Localidad</label>
+                                <input type="text" id="localidad" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="provincia">Provincia</label>
+                                <input type="text" id="provincia" class="form-control">
+                            </div>
+                        </div>
+                    </fieldset>
+                </form>
+            </div>
+
+        </div>
+    </div>
+    <div class="text-end mt-3">
+        <button id="saveBtn" class="btn btn-success">Guardar datos</button>
+    </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="addTabModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Agregar nueva pestaña</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="newTabType" class="form-label">Tipo de pestaña</label>
+                            <select id="newTabType" class="form-select">
+                                <option value="inspt">Cargo INSPT</option>
+                                <option value="reparticion">Otra repartición</option>
+                                <option value="tarea">Tarea/Actividad</option>
+                                <option value="pasividad">Pasividad</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="newTabLabel" class="form-label">Etiqueta</label>
+                            <input type="text" id="newTabLabel" class="form-control" placeholder="Nombre descriptivo">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button id="confirmAddTab" type="button" class="btn btn-primary">Agregar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyC4v9h8eXWRBnzTD-VDDludynd5nzOv4xc", authDomain: "est-utn-c0988.firebaseapp.com", projectId: "est-utn-c0988", storageBucket: "est-utn-c0988.firebasestorage.app", messagingSenderId: "788767016042", appId: "1:788767016042:web:8a480a74e3b1ef0de97613", measurementId: "G-LG1H6JGJDH" };
+        const placeholderMap = {
+            inspt: 'Cargo INSPT', reparticion: 'Otra Rep.',
+            tarea: 'Tarea/Actividad', pasividad: 'Pasividad'
+        };
+        const suffixMap = { inspt: ' (INSPT)', reparticion: '', tarea: '', pasividad: '' };
+
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth(), db = firebase.firestore(); let currentUser = null;
+        auth.onAuthStateChanged(u => { if (!u) return window.location.href = 'login.html'; currentUser = u; init(); });
+        /**
+         * Crea una nueva pestaña de tipo `type`, con etiqueta `labelRaw`
+         * y opcionalmente la rellena si llega `cargo`.
+         */
+
+        function init() {
+            console.log('🔄 init()');
+
+            // 1) Generar las celdas vacías del horario fijo (sin scope)
+
+            // 2) Mostrar modal para agregar pestaña
+            document.getElementById('addTabBtn').addEventListener('click', () => {
+                const modal = new bootstrap.Modal(document.getElementById('addTabModal'));
+                modal.show();
+            });
+
+            // 3) Confirmar agregado de pestaña
+            document.getElementById('confirmAddTab').addEventListener('click', () => {
+                addTabFromModal();
+                // Limpiar input
+                document.getElementById('newTabLabel').value = '';
+                // Cerrar modal
+                const modalEl = document.getElementById('addTabModal');
+                bootstrap.Modal.getInstance(modalEl).hide();
+            });
+
+            // 4) Guardar datos
+            document.getElementById('saveBtn').addEventListener('click', saveData);
+
+            // 5) Cargar datos de Firebase
+            loadData();
+        }
+
+
+        function addDynamicTab(type, labelRaw = '', cargo) {
+            const ul = document.getElementById('cargosTab');
+            const cont = document.getElementById('cargosTabContent');
+            const id = `tab-${type}-${Date.now()}`;
+
+            // 1) Nav button
+            const li = document.createElement('li');
+            li.className = 'nav-item';
+            li.role = 'presentation';
+            const btnText = (labelRaw || placeholderMap[type]) + suffixMap[type];
+            li.innerHTML = `
+    <button class="nav-link" id="${id}-tab"
+            data-bs-toggle="tab" data-bs-target="#${id}"
+            type="button" role="tab">
+      ${btnText}
+    </button>
+    <button type="button" class="btn-close ms-1" aria-label="Cerrar"></button>
+  `;
+            ul.insertBefore(li, ul.querySelector('.ms-auto'));
+
+            // 2) Panel
+            const pane = document.createElement('div');
+            pane.className = 'tab-pane fade';
+            pane.id = id;
+            pane.role = 'tabpanel';
+            pane.dataset.type = type;
+            pane.dataset.label = labelRaw;    // guardamos el raw
+            pane.innerHTML = getFormHTML(type, id);
+            cont.appendChild(pane);
+
+            // 3) Mostrarla
+            new bootstrap.Tab(li.querySelector('button')).show();
+
+            // 4) Cerrar
+            li.querySelector('.btn-close').onclick = () => {
+                li.remove();
+                pane.remove();
+                document.getElementById('tab-personales-tab').click();
+            };
+
+            // 5) Configurar input de etiqueta
+            const inputLabel = pane.querySelector(`#${id}-label`);
+            const tabButton = li.querySelector('button');
+            // si venía cargo.label, lo prellenamos
+            if (cargo?.label) inputLabel.value = cargo.label;
+            inputLabel.addEventListener('input', () => {
+                const raw = inputLabel.value.trim();
+                pane.dataset.label = raw;  // actualizamos dataset
+                const text = (raw || placeholderMap[type]) + suffixMap[type];
+                tabButton.textContent = text;
+            });
+
+            // 6) Rellenar datos si viene cargo
+            if (cargo) {
+                populateDynamic(id, cargo);
+                calculateHours(id);
+            }
+        }
+
+        function defaultIngreso() { return new Date().toISOString().substr(0, 10); }
+        async function loadData() {
+            const uref = db.collection('usuarios').doc(currentUser.uid);
+            const doc = await uref.get();
+            if (doc.exists) fillPersonal(doc.data());
+
+            const cs = await uref.collection('cargos').get();
+            // Ordenamos igual que antes...
+            const cargos = cs.docs
+                .map(snap => ({ id: snap.id, ...snap.data() }))
+                .sort((a, b) => {
+                    const pA = a.type === 'inspt' ? 0 : 1;
+                    const pB = b.type === 'inspt' ? 0 : 1;
+                    if (pA !== pB) return pA - pB;
+                    if (a.type === 'inspt') {
+                        const nA = a.nuevo ? 0 : 1;
+                        const nB = b.nuevo ? 0 : 1;
+                        if (nA !== nB) return nA - nB;
+                    }
+                    return (a.order || 0) - (b.order || 0);
+                });
+
+            cargos.forEach(c => {
+                const pane = addDynamicTab(c.type, c.label || capitalize(c.type), c);
+                // guardamos el id de Firestore para futuros updates
+                pane.dataset.dbid = c.id;
+            });
+        }
+
+        // Helper para capitalizar etiquetas genéricas
+        function capitalize(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+        function fillPersonal(d) { document.getElementById('legajo').value = d.legajo || '';['nombre', 'apellido', 'dni', 'fechaNacimiento', 'email', 'telefono', 'domicilio', 'numero', 'localidad', 'provincia', 'codigoPostal'].forEach(id => { const el = document.getElementById(id === 'email' ? 'emailPersonal' : id); if (el) el.value = d[id] || ''; }); }
+        function fillINSPT(c) {
+            document.getElementById('insptFunciones').value = c.funciones || '';
+            document.getElementById('insptIngreso').value = c.ingreso || defaultIngreso();
+            document.getElementById('insptNuevo').checked = c.nuevo || false;
+            document.getElementById('insptLicencia').checked = c.licencia || false;
+            // Llama setSchedule SIN pasar scope para llenar la tabla estática:
+            setSchedule('', c.horario);
+        }
+        // Tabs dinámicas
+        function addTabFromModal() { const t = document.getElementById('newTabType').value, l = document.getElementById('newTabLabel').value.trim() || document.querySelector('#newTabType option:checked').text; addDynamicTab(t, l); bootstrap.Modal.getInstance(document.getElementById('addTabModal')).hide(); document.getElementById('newTabLabel').value = ''; }
+        /**
+ * Crea una pestaña dinámica (inspt, repartición, tarea, pasividad, etc.)
+ * y, si recibe un objeto `cargo`, la rellena con sus datos.
+ *
+ * @param {string} type   – Tipo de cargo ('inspt', 'reparticion', 'tarea', 'pasividad', …)
+ * @param {string} label  – Texto de la pestaña
+ * @param {object} cargo  – (Opcional) objeto con los datos a poblar, incluyendo .horario
+ */
+        /**
+  * Crea una nueva pestaña de tipo `type`, con etiqueta `labelRaw`
+  * y opcionalmente la rellena si llega `cargo`.
+  */
+        function addDynamicTab(type, labelRaw = '', cargo) {
+            const ul = document.getElementById('cargosTab');
+            const cont = document.getElementById('cargosTabContent');
+            const id = `tab-${type}-${Date.now()}`;
+
+            // 1) Nav button
+            const li = document.createElement('li');
+            li.className = 'nav-item';
+            li.role = 'presentation';
+            const btnText = (labelRaw || placeholderMap[type]) + suffixMap[type];
+            li.innerHTML = `
+    <button class="nav-link" id="${id}-tab"
+            data-bs-toggle="tab" data-bs-target="#${id}"
+            type="button" role="tab">
+      ${btnText}
+    </button>
+    <button type="button" class="btn-close ms-1" aria-label="Cerrar"></button>
+  `;
+            ul.insertBefore(li, ul.querySelector('.ms-auto'));
+
+            // 2) Panel
+            const pane = document.createElement('div');
+            pane.className = 'tab-pane fade';
+            pane.id = id;
+            pane.role = 'tabpanel';
+            pane.dataset.type = type;
+            pane.dataset.label = labelRaw;    // guardamos el raw
+            pane.innerHTML = getFormHTML(type, id);
+            cont.appendChild(pane);
+
+            // 3) Mostrarla
+            new bootstrap.Tab(li.querySelector('button')).show();
+
+            // 4) Cerrar
+            li.querySelector('.btn-close').onclick = () => {
+                li.remove();
+                pane.remove();
+                document.getElementById('tab-personales-tab').click();
+            };
+
+            // 5) Configurar input de etiqueta
+            const inputLabel = pane.querySelector(`#${id}-label`);
+            const tabButton = li.querySelector('button');
+            // si venía cargo.label, lo prellenamos
+            if (cargo?.label) inputLabel.value = cargo.label;
+            inputLabel.addEventListener('input', () => {
+                const raw = inputLabel.value.trim();
+                pane.dataset.label = raw;  // actualizamos dataset
+                const text = (raw || placeholderMap[type]) + suffixMap[type];
+                tabButton.textContent = text;
+            });
+
+            // 6) Rellenar datos si viene cargo
+            if (cargo) {
+                populateDynamic(id, cargo);
+                calculateHours(id);
+            }
+        }
+
+        /**
+ * Devuelve el HTML de un formulario para la pestaña de tipo `type`
+ * con identificador `p`. Incluye al final el bloque de Total Horas.
+ *
+ * @param {string} type – 'inspt', 'reparticion', 'tarea' o 'pasividad'
+ * @param {string} p    – id de la pestaña (ej. 'tab-inspt-163452...')
+ * @returns {string}    – HTML completo del <form>
+ */
+        /**
+ * Devuelve el HTML del <form> para la pestaña dinámica de tipo `type` con id `p`.
+ */
+        function getFormHTML(type, p) {
+            let h = `<form id="form-${p}">`;
+
+            // Editable label
+            h += `
+    <div class="mb-3">
+      <label for="${p}-label" class="form-label">Etiqueta</label>
+      <input type="text"
+             id="${p}-label"
+             class="form-control"
+             placeholder="${placeholderMap[type] || ''}">
+    </div>
+  `;
+
+            if (type === 'inspt') {
+                h += `
+      <div class="row g-3 mb-3">
+        <div class="col-md-8">
+          <label class="form-label" for="${p}-funciones">Funciones</label>
+          <input type="text" id="${p}-funciones" class="form-control">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="${p}-ingreso">Ingreso</label>
+          <input type="date" id="${p}-ingreso" class="form-control" value="${defaultIngreso()}">
+        </div>
+      </div>
+      <div class="form-check form-check-inline mb-3">
+        <input type="checkbox" id="${p}-nuevo" class="form-check-input">
+        <label class="form-check-label" for="${p}-nuevo">Cargo nuevo</label>
+      </div>
+      <div class="form-check form-check-inline mb-3">
+        <input type="checkbox" id="${p}-licencia" class="form-check-input">
+        <label class="form-check-label" for="${p}-licencia">Licencia</label>
+      </div>
+      <div class="mb-3">
+        <h5>Horario</h5>
+        <table class="table table-bordered schedule-table">
+          <thead>
+            <tr>
+              ${['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado']
+                        .map(d => `
+                  <th class="text-capitalize">
+                    ${d.slice(0, 3)}<br>
+                    <button type="button"
+                            class="btn btn-sm btn-outline-success add-day"
+                            data-day="${d}"
+                            data-scope="${p}">+</button>
+                  </th>
+                `).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              ${['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado']
+                        .map(d => `<td class="schedule-day" data-day="${d}" data-scope="${p}"></td>`)
+                        .join('')}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    `;
+            }
+
+            else if (type === 'reparticion') {
+                h += `
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label" for="${p}-reparticion">Repartición</label>
+          <input type="text" id="${p}-reparticion" class="form-control">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="${p}-calle">Calle</label>
+          <input type="text" id="${p}-calle" class="form-control">
+        </div>
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col-md-3">
+          <label class="form-label" for="${p}-numero">Número</label>
+          <input type="text" id="${p}-numero" class="form-control">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="${p}-localidad">Localidad</label>
+          <input type="text" id="${p}-localidad" class="form-control">
+        </div>
+        <div class="col-md-5">
+          <label class="form-label" for="${p}-provincia">Provincia</label>
+          <input type="text" id="${p}-provincia" class="form-control">
+        </div>
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col-md-8">
+          <label class="form-label" for="${p}-funciones">Funciones</label>
+          <input type="text" id="${p}-funciones" class="form-control">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="${p}-ingreso">Ingreso</label>
+          <input type="date" id="${p}-ingreso" class="form-control" value="${defaultIngreso()}">
+        </div>
+      </div>
+      <div class="mb-3">
+        <h5>Horario</h5>
+        <table class="table table-bordered schedule-table">
+          <thead>
+            <tr>
+              ${['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado']
+                        .map(d => `
+                  <th class="text-capitalize">
+                    ${d.slice(0, 3)}<br>
+                    <button type="button"
+                            class="btn btn-sm btn-outline-success add-day"
+                            data-day="${d}"
+                            data-scope="${p}">+</button>
+                  </th>
+                `).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              ${['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado']
+                        .map(d => `<td class="schedule-day" data-day="${d}" data-scope="${p}"></td>`)
+                        .join('')}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    `;
+            }
+
+            else if (type === 'tarea') {
+                h += `
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label" for="${p}-empleador">Empleador</label>
+          <input type="text" id="${p}-empleador" class="form-control">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="${p}-lugar">Lugar</label>
+          <input type="text" id="${p}-lugar" class="form-control">
+        </div>
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col-md-8">
+          <label class="form-label" for="${p}-funciones">Funciones</label>
+          <input type="text" id="${p}-funciones" class="form-control">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="${p}-ingreso">Ingreso</label>
+          <input type="date" id="${p}-ingreso" class="form-control" value="${defaultIngreso()}">
+        </div>
+      </div>
+      <div class="mb-3">
+        <h5>Horario</h5>
+        <table class="table table-bordered schedule-table">
+          <thead>
+            <tr>
+              ${['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado']
+                        .map(d => `
+                  <th class="text-capitalize">
+                    ${d.slice(0, 3)}<br>
+                    <button type="button"
+                            class="btn btn-sm btn-outline-success add-day"
+                            data-day="${d}"
+                            data-scope="${p}">+</button>
+                  </th>
+                `).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              ${['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado']
+                        .map(d => `<td class="schedule-day" data-day="${d}" data-scope="${p}"></td>`)
+                        .join('')}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    `;
+            }
+
+            else if (type === 'pasividad') {
+                h += `
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label" for="${p}-causa">Causa</label>
+          <input type="text" id="${p}-causa" class="form-control">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="${p}-regimen">Régimen</label>
+          <input type="text" id="${p}-regimen" class="form-control">
+        </div>
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label" for="${p}-desde">Desde</label>
+          <input type="date" id="${p}-desde" class="form-control" value="${defaultIngreso()}">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="${p}-institucion">Institución</label>
+          <input type="text" id="${p}-institucion" class="form-control">
+        </div>
+      </div>
+      <!-- pasividad no tiene horario ni total horas -->
+    `;
+            }
+
+            // Total horas block for all except pasividad
+            if (type !== 'pasividad') {
+                h += `
+      <div class="mb-3">
+        <strong>Total horas:</strong>
+        <span id="${p}-totalHoras">0h 0m</span>
+      </div>
+      <div class="mb-3">
+        <strong>Total horas Cátedra:</strong>
+        <span id="${p}-totalHorasCat">0h 0m</span>
+    </div>
+      
+    `;
+            }
+
+            h += `</form>`;
+            return h;
+        }
+
+        document.addEventListener('input', e => {
+            if (e.target.matches('.from-slot, .to-slot')) {
+                // Encuentra la celda .schedule-day más cercana para sacar su scope
+                const cell = e.target.closest('.schedule-day');
+                const scope = cell.dataset.scope || '';  // "" para fija, o el id de la pestaña
+                calculateHours(scope);
+            }
+        });
+
+        function extractSchedule(scope = '') {
+            const dias = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+            const horarios = [];
+
+            dias.forEach(dia => {
+                const selector = scope
+                    ? `.schedule-day[data-day="${dia}"][data-scope="${scope}"]`
+                    : `.schedule-day[data-day="${dia}"]:not([data-scope])`;
+
+                const contenedor = document.querySelector(selector);
+                if (!contenedor) return;
+
+                const slots = [];
+                contenedor.querySelectorAll('.slot-row').forEach(row => {
+                    const from = row.querySelector('.from-slot')?.value;
+                    const to = row.querySelector('.to-slot')?.value;
+                    if (from && to) slots.push({ from, to });
+                });
+
+                if (slots.length) horarios.push({ day: dia, slots });
+            });
+
+            return horarios;
+        }
+
+        /**
+         * Rellena el formulario de la pestaña dinámica cuyo id es `p`
+         * con los datos del cargo `c`.
+         *
+         * @param {string} p  – id de la pestaña (ej. "tab-inspt-164321...")
+         * @param {object} c – objeto cargo recuperado de Firestore
+         */
+        function populateDynamic(p, c) {
+            const type = c.type;
+
+            if (type === 'inspt') {
+                // Cargo INSPT dinámico
+                document.getElementById(`${p}-funciones`).value = c.funciones || '';
+                document.getElementById(`${p}-ingreso`).value = c.ingreso || defaultIngreso();
+                document.getElementById(`${p}-nuevo`).checked = !!c.nuevo;
+                document.getElementById(`${p}-licencia`).checked = !!c.licencia;
+                setSchedule(p, c.horario);
+
+            } else if (type === 'reparticion') {
+                document.getElementById(`${p}-reparticion`).value = c.reparticion || '';
+                document.getElementById(`${p}-calle`).value = c.calle || '';
+                document.getElementById(`${p}-numero`).value = c.numero || '';
+                document.getElementById(`${p}-localidad`).value = c.localidad || '';
+                document.getElementById(`${p}-provincia`).value = c.provincia || '';
+                document.getElementById(`${p}-funciones`).value = c.funciones || '';
+                document.getElementById(`${p}-ingreso`).value = c.ingreso || defaultIngreso();
+                setSchedule(p, c.horario);
+
+            } else if (type === 'tarea') {
+                document.getElementById(`${p}-empleador`).value = c.empleador || '';
+                document.getElementById(`${p}-lugar`).value = c.lugar || '';
+                document.getElementById(`${p}-funciones`).value = c.funciones || '';
+                document.getElementById(`${p}-ingreso`).value = c.ingreso || defaultIngreso();
+                setSchedule(p, c.horario);
+
+            } else if (type === 'pasividad') {
+                document.getElementById(`${p}-causa`).value = c.causa || '';
+                document.getElementById(`${p}-regimen`).value = c.regimen || '';
+                document.getElementById(`${p}-desde`).value = c.desde || defaultIngreso();
+                document.getElementById(`${p}-institucion`).value = c.institucion || '';
+                // (pasividad no tiene horario)
+
+            } else {
+                console.warn(`Tipo de cargo desconocido "${type}" en populateDynamic`);
+            }
+        }
+
+        // Horarios
+
+        document.addEventListener('click', e => {
+            if (e.target.classList.contains('add-day')) {
+                const day = e.target.dataset.day;
+                const scope = e.target.dataset.scope || '';
+                addDayTemplate(day, scope);
+                calculateHours(scope);
+            }
+            if (e.target.classList.contains('remove-slot')) {
+                // antes de quitar, capturo el scope
+                const cell = e.target.closest('.schedule-day');
+                const scope = cell.dataset.scope || '';
+                e.target.closest('.slot-row').remove();
+                calculateHours(scope);
+            }
+        });
+
+        function addDayTemplate(day, scope = '') {
+            const selector = scope ? `.schedule-day[data-day="${day}"][data-scope="${scope}"]` : `.schedule-day[data-day="${day}"]`;
+            const cell = document.querySelector(selector);
+            if (!cell) return;
+            const row = document.createElement('div');
+            row.className = 'slot-row d-flex align-items-center flex-wrap gap-2 justify-content-center';
+            row.innerHTML = `
+    <div class="d-flex align-items-center">
+      <label class="me-1 mb-0">Desde</label>
+      <input type="time" class="form-control form-control-sm me-2 from-slot" style="width: 110px;">
+    </div>
+    <div class="d-flex align-items-center">
+      <label class="me-1 mb-0">Hasta</label>
+      <input type="time" class="form-control form-control-sm me-2 to-slot" style="width: 110px;">
+    </div>
+    <button class="btn btn-sm btn-outline-danger remove-slot" type="button">🗑️</button>
+  `;
+            cell.appendChild(row);
+        }
+
+        // Guardar
+        /**
+  * Lee todos los formularios de pestañas (inspt + dinámicas),
+  * incluye el campo "label" y el array horario, y los guarda en Firestore
+  */
+        /**
+  * Lee todos los formularios (personales, INSPT fijo y dinámicos),
+  * y guarda los datos en Firestore, incluyendo las etiquetas editables.
+  */
+        async function saveData() {
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = true;
+            try {
+                const uref = db.collection('usuarios').doc(currentUser.uid);
+                // 1) Personal (merge mantiene solo los campos cambiados)
+                const per = { /* …igual que antes…*/ };
+                await uref.set(per, { merge: true });
+
+                // 2) Leemos TODOS los cargos una sola vez
+                const colRef = uref.collection('cargos');
+                const snapshot = await colRef.get();
+                const existing = {};
+                snapshot.docs.forEach(snap => existing[snap.id] = snap);
+
+                // 3) Recorremos las pestañas actuales
+                const panes = Array.from(document.querySelectorAll('.tab-pane[data-type]'));
+                const seenIds = new Set();
+
+                for (let i = 0; i < panes.length; i++) {
+                    const pane = panes[i];
+                    const type = pane.dataset.type;
+                    const raw = pane.querySelector(`#${pane.id}-label`).value.trim();
+                    const data = { type, label: raw, order: i };
+
+                    // rellenamos fields según type…
+                    if (type === 'inspt') {
+                        data.funciones = /*…*/;
+                        data.ingreso = /*…*/;
+                        data.nuevo = pane.querySelector(`#${pane.id}-nuevo`).checked;
+                        data.licencia = pane.querySelector(`#${pane.id}-licencia`).checked;
+                        data.horario = extractSchedule(pane.id);
+                    }
+                    // …otros tipos igual…
+
+                    if (pane.dataset.dbid) {
+                        // update
+                        await colRef.doc(pane.dataset.dbid).set(data, { merge: true });
+                        seenIds.add(pane.dataset.dbid);
+                    } else {
+                        // new
+                        const ref = await colRef.add(data);
+                        pane.dataset.dbid = ref.id;
+                        seenIds.add(ref.id);
+                    }
+                }
+
+                // 4) Borrar los que quedaron en Firestore pero ya no en el DOM
+                const batch = db.batch();
+                Object.keys(existing).forEach(id => {
+                    if (!seenIds.has(id)) batch.delete(colRef.doc(id));
+                });
+                await batch.commit();
+
+                alert('Datos guardados correctamente');
+            } catch (e) {
+                alert('Error al guardar: ' + e.message);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+
+        /**
+ * Rellena en pantalla los slots de un horario cargado.
+ * @param {string} scope  El sufijo de datoscope (ej. "tab-inspt" o el id de la pestaña dinámica).
+ * @param {Array}  horario Array de {day: string, slots: [{from, to}, …]}.
+ */
+        function setSchedule(scope, horario) {
+            if (!Array.isArray(horario)) return;
+            horario.forEach(entry => {
+                const { day, slots } = entry;
+                slots.forEach(({ from, to }) => {
+                    // Añade el row vacio
+                    addDayTemplate(day, scope);
+                    // Selecciona la última celda para ese día+ámbito
+                    const selector = scope
+                        ? `.schedule-day[data-day="${day}"][data-scope="${scope}"]`
+                        : `.schedule-day[data-day="${day}"]`;
+                    const cells = document.querySelectorAll(selector);
+                    const lastCell = cells[cells.length - 1];
+                    // Toma el último slot-row añadido y asigna valores
+                    const row = lastCell.querySelector('.slot-row:last-child');
+                    if (row) {
+                        row.querySelector('.from-slot').value = from;
+                        row.querySelector('.to-slot').value = to;
+                    }
+                });
+            });
+            calculateHours(scope);
+
+        }
+
+        /**
+ * Suma todas las franjas de un scope dado y actualiza el campo totalHoras.
+ * @param {string} scope  – "" para la fija, o el id de la pestaña dinámica.
+ */
+        function calculateHours(scope) {
+            // 1) selector de franjas
+            const selector = scope
+                ? `.schedule-day[data-scope="${scope}"] .slot-row`
+                : `.schedule-day:not([data-scope]) .slot-row`;
+
+            let totalMinutes = 0;
+            document.querySelectorAll(selector).forEach(row => {
+                const from = row.querySelector('.from-slot')?.value;
+                const to = row.querySelector('.to-slot')?.value;
+                if (from && to) {
+                    const [fh, fm] = from.split(':').map(Number);
+                    const [th, tm] = to.split(':').map(Number);
+                    const start = fh * 60 + fm;
+                    const end = th * 60 + tm;
+                    if (end > start) totalMinutes += (end - start);
+                }
+            });
+
+            // 2) Horas RELOJ
+            const h = Math.floor(totalMinutes / 60);
+            const m = totalMinutes % 60;
+            const clockId = scope ? `${scope}-totalHoras` : 'tab-inspt-totalHoras';
+            document.getElementById(clockId).textContent = `${h}h ${m}m`;
+
+            // 3) Horas CÁTEDRA (bloques de 40 min)
+            const catTotal = totalMinutes / 40;
+            const cH = Math.floor(catTotal);
+            const cM = Math.round((catTotal - cH) * 60);
+            const catId = scope ? `${scope}-totalHorasCat` : 'tab-inspt-totalHorasCat';
+            const catEl = document.getElementById(catId);
+            if (catEl) catEl.textContent = `${cH}h ${cM}m`;
+        }
+    </script>
+</body>
+
+</html>
