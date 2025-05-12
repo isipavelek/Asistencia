@@ -31,6 +31,7 @@
             min-width: 120px;
         }
 
+        /* Mostrar botón de cerrar solo al pasar el ratón */
         .nav-item .btn-close {
             opacity: 0;
             transition: opacity .2s;
@@ -47,7 +48,7 @@
         <h2 class="mb-4">🔄 Cargar Datos de Usuario</h2>
 
         <!-- Toasts -->
-        <div class="position-fixed bottom-0 end-0 p-3" style="z-index:11">
+        <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
             <div id="toastSuccess" class="toast fade align-items-center text-bg-success border-0" role="alert"
                 aria-live="assertive" aria-atomic="true">
                 <div class="d-flex">
@@ -70,19 +71,11 @@
         <ul class="nav nav-tabs" id="cargosTab" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="tab-personales-tab" data-bs-toggle="tab"
-                    data-bs-target="#tab-personales" type="button" role="tab">
-                    <i class="bi bi-person-circle"></i> Datos Personales
-                </button>
+                    data-bs-target="#tab-personales" type="button" role="tab">Datos Personales</button>
             </li>
-            <li class="ms-auto d-flex gap-2 align-items-center">
-                <button id="addTabBtn" class="btn btn-primary btn-sm">
-                    <i class="bi bi-plus-lg"></i> Agregar pestaña
-                </button>
-                <!-- Nuevo botón Ver AB -->
-                <a href="verAB.html" target="_blank" id="verAbBtn"
-                    class="btn btn-outline-secondary btn-sm">
-                    Ver AB
-                </a>
+            <li class="ms-auto">
+                <button id="addTabBtn" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Agregar
+                    pestaña</button>
             </li>
         </ul>
 
@@ -192,13 +185,14 @@
                     </fieldset>
                 </form>
             </div>
-            <!-- pestañas dinámicas aquí -->
+            <!-- Aquí irán las pestañas dinámicas de cargos -->
         </div>
 
         <!-- Gráfico de resumen -->
         <div class="mt-4">
             <canvas id="chartHoras" height="100"></canvas>
         </div>
+
         <div class="text-end mt-3">
             <button id="saveBtn" class="btn btn-success"><i class="bi bi-save"></i> Guardar datos</button>
         </div>
@@ -206,7 +200,7 @@
 
     <!-- Modal Agregar Pestaña -->
     <div class="modal fade" id="addTabModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-sm">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Agregar nueva pestaña</h5>
@@ -214,9 +208,8 @@
                 </div>
                 <div class="modal-body">
                     <div class="row g-3">
-                        <div class="col-12">
-                            <label for="newTabType" class="form-label"><i class="bi bi-layout-text-window-reverse"></i>
-                                Tipo de pestaña</label>
+                        <div class="col-md-6">
+                            <label for="newTabType" class="form-label">Tipo de pestaña</label>
                             <select id="newTabType" class="form-select">
                                 <option value="inspt">Cargo INSPT</option>
                                 <option value="reparticion">Otra repartición</option>
@@ -224,8 +217,8 @@
                                 <option value="pasividad">Pasividad</option>
                             </select>
                         </div>
-                        <div class="col-12">
-                            <label for="newTabLabel" class="form-label"><i class="bi bi-tag"></i> Etiqueta</label>
+                        <div class="col-md-6">
+                            <label for="newTabLabel" class="form-label">Etiqueta</label>
                             <input type="text" id="newTabLabel" class="form-control" placeholder="Nombre descriptivo">
                         </div>
                     </div>
@@ -238,9 +231,11 @@
         </div>
     </div>
 
-    <!-- Chart.js, Bootstrap JS + Popper, Firebase -->
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Bootstrap JS + Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -264,7 +259,7 @@
         const toastSuccess = new bootstrap.Toast(document.getElementById('toastSuccess'));
         const toastError = new bootstrap.Toast(document.getElementById('toastError'));
 
-        // Mapas de texto e iconos
+        // Mapas de texto
         const placeholderMap = {
             inspt: 'Cargo INSPT',
             reparticion: 'Otra Rep.',
@@ -277,24 +272,11 @@
             tarea: '',
             pasividad: ''
         };
-        const iconMap = {
-            inspt: 'bi-briefcase-fill',
-            reparticion: 'bi-building',
-            tarea: 'bi-list-task',
-            pasividad: 'bi-clock-history'
-        };
 
-        // Validación inline
-        function applyValidation(form) {
-            form.querySelectorAll('input').forEach(input => {
-                input.addEventListener('blur', () => {
-                    input.classList.toggle('is-valid', input.checkValidity());
-                    input.classList.toggle('is-invalid', !input.checkValidity());
-                });
-            });
-        }
+        
 
-        // Inicia la app
+        let autosaveTimer, chartInstance;
+
         auth.onAuthStateChanged(u => {
             if (!u) return window.location.href = 'login.html';
             currentUser = u;
@@ -302,21 +284,52 @@
         });
 
         function init() {
-            applyValidation(document.getElementById('form-personales'));
+            // Validation inline
+            document.querySelectorAll('#form-personales input').forEach(input => {
+                input.addEventListener('blur', () => {
+                    if (input.checkValidity()) {
+                        input.classList.add('is-valid');
+                        input.classList.remove('is-invalid');
+                    } else {
+                        input.classList.add('is-invalid');
+                        input.classList.remove('is-valid');
+                    }
+                });
+            });
+
+            // Bootstrap tooltips
             document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el =>
                 new bootstrap.Tooltip(el)
             );
+
+            // Schedule autosave on input
+            document.querySelectorAll('input, select').forEach(el => {
+                el.addEventListener('input', scheduleAutosave);
+            });
+            // Also on tab change
+            document.getElementById('cargosTab').addEventListener('shown.bs.tab', scheduleAutosave);
+
+            // Modal and buttons
             document.getElementById('addTabBtn').addEventListener('click', () =>
                 new bootstrap.Modal(document.getElementById('addTabModal')).show()
             );
             document.getElementById('confirmAddTab').addEventListener('click', () => {
-                const t = document.getElementById('newTabType').value;
-                const l = document.getElementById('newTabLabel').value.trim();
-                addDynamicTab(t, l);
+                addTabFromModal();
+                document.getElementById('newTabLabel').value = '';
                 bootstrap.Modal.getInstance(document.getElementById('addTabModal')).hide();
             });
             document.getElementById('saveBtn').addEventListener('click', saveData);
+
             loadData();
+        }
+
+        function scheduleAutosave() {
+            clearTimeout(autosaveTimer);
+            autosaveTimer = setTimeout(() => {
+                saveData(true);
+                document.querySelector('#toastSuccess .toast-body').textContent = 'Autosave ✔️';
+                toastSuccess.show();
+            }, 2000);
         }
 
         async function loadData() {
@@ -336,7 +349,8 @@
                     }
                     return (a.order || 0) - (b.order || 0);
                 });
-            cargos.forEach(c => addDynamicTab(c.type, c.label || '', c));
+            cargos.forEach(c => addDynamicTab(c.type, c.label || capitalize(c.type), c));
+
             drawResumen();
         }
 
@@ -346,12 +360,15 @@
                 form.classList.add('was-validated');
                 return;
             }
-            const btn = document.getElementById('saveBtn'), orig = btn.innerHTML;
+            const btn = document.getElementById('saveBtn');
+            const orig = btn.innerHTML;
             btn.disabled = true;
-            if (!silent) btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...`;
+            if (!silent) btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status"
+        aria-hidden="true"></span> Guardando...`;
 
             try {
                 const uref = db.collection('usuarios').doc(currentUser.uid);
+
                 // 1) Datos personales
                 const per = {
                     legajo: document.getElementById('legajo').value,
@@ -424,6 +441,7 @@
             }
         }
 
+        // Dibuja gráfico de barras con Chart.js
         function drawResumen() {
             const labels = [], datos = [];
             document.querySelectorAll('li.nav-item button.nav-link').forEach(btn => {
@@ -435,131 +453,141 @@
                 datos.push(parseInt(text));
             });
             const ctx = document.getElementById('chartHoras').getContext('2d');
-            if (window.chartInstance) window.chartInstance.destroy();
-            window.chartInstance = new Chart(ctx, {
+            if (chartInstance) chartInstance.destroy();
+            chartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: { labels, datasets: [{ label: 'Horas semanales', data: datos }] },
                 options: { responsive: true, animation: { duration: 500 } }
             });
         }
 
-        function addDynamicTab(type, labelRaw = '', cargo) {
-            // ID único
-            const unique = Date.now() + '-' + Math.floor(Math.random() * 1000);
-            const id = `tab-${type}-${unique}`;
+        // Añade pestaña desde el modal
+        function addTabFromModal() {
+            const t = document.getElementById('newTabType').value;
+            const lRaw = document.getElementById('newTabLabel').value.trim();
+            addDynamicTab(t, lRaw || document.querySelector('#newTabType option:checked').text);
+        }
 
+        // Crea y muestra una pestaña dinámica
+        function addDynamicTab(type, labelRaw = '', cargo) {
+            const ul = document.getElementById('cargosTab'),
+                cont = document.getElementById('cargosTabContent'),
+                id = `tab-${type}-${Date.now()}`;
             // Nav item
             const li = document.createElement('li');
             li.className = 'nav-item'; li.role = 'presentation';
-            const icon = `<i class="bi ${iconMap[type]}"></i> `;
+            const btnText = (labelRaw || placeholderMap[type]) + suffixMap[type];
             li.innerHTML = `
-    <button class="nav-link" id="${id}-tab"
-            data-bs-toggle="tab" data-bs-target="#${id}"
-            type="button" role="tab">${icon}${labelRaw || placeholderMap[type]}${suffixMap[type]}</button>
-    <button type="button" class="btn-close ms-1" aria-label="Cerrar"></button>
-  `;
-            document.getElementById('cargosTab').insertBefore(li, document.querySelector('.ms-auto'));
-
+        <button class="nav-link" id="${id}-tab"
+                data-bs-toggle="tab" data-bs-target="#${id}"
+                type="button" role="tab">${btnText}</button>
+        <button type="button" class="btn-close ms-1" aria-label="Cerrar"></button>
+      `;
+            ul.insertBefore(li, ul.querySelector('.ms-auto'));
             // Panel
             const pane = document.createElement('div');
-            pane.className = 'tab-pane fade needs-validation';
-            pane.id = id; pane.role = 'tabpanel';
-            pane.dataset.type = type;
+            pane.className = 'tab-pane fade'; pane.id = id; pane.role = 'tabpanel';
+            pane.dataset.type = type; pane.dataset.label = labelRaw;
             pane.innerHTML = getFormHTML(type, id);
-            document.getElementById('cargosTabContent').appendChild(pane);
-
-            // Mostrar + validar
-            new bootstrap.Tab(li.querySelector('.nav-link')).show();
-            applyValidation(pane);
-
-            // Poblar si viene de Firestore
+            cont.appendChild(pane);
+            // Show it
+            new bootstrap.Tab(li.querySelector('button')).show();
+            // Confirm close
+            li.querySelector('.btn-close').addEventListener('click', e => {
+                e.preventDefault();
+                const name = li.querySelector('button.nav-link').textContent.trim();
+                if (confirm(`¿Seguro que quieres eliminar "${name}"? Se perderán sus datos.`)) {
+                    pane.remove(); li.remove();
+                    document.getElementById('tab-personales-tab').click();
+                    drawResumen();
+                }
+            });
+            // Editable label live
+            const inputLabel = pane.querySelector(`#${id}-label`),
+                tabBtn = li.querySelector('button.nav-link');
+            if (cargo?.label) inputLabel.value = cargo.label;
+            inputLabel.addEventListener('input', () => {
+                const raw = inputLabel.value.trim();
+                pane.dataset.label = raw;
+                tabBtn.textContent = (raw || placeholderMap[type]) + suffixMap[type];
+            });
+            // Populate data
             if (cargo) {
                 populateDynamic(id, cargo);
                 calculateHours(id);
             }
-
-            // Cerrar pestaña
-            li.querySelector('.btn-close').addEventListener('click', () => {
-                if (confirm(`Eliminar pestaña “${labelRaw || placeholderMap[type]}”?`)) {
-                    pane.remove(); li.remove(); drawResumen();
-                }
-            });
-
-            // Label editable
-            const inp = pane.querySelector(`#${id}-label`),
-                tabBtn = li.querySelector('.nav-link');
-            inp.value = cargo?.label || '';
-            inp.addEventListener('input', () => {
-                const txt = inp.value.trim() || placeholderMap[type];
-                tabBtn.innerHTML = icon + txt + suffixMap[type];
-            });
         }
 
+        // Genera el HTML de formulario según el tipo
         function getFormHTML(type, p) {
-            let h = `<form id="form-${p}" class="needs-validation" novalidate>`;
+            let h = `<form id="form-${p}">`;
+            // Etiqueta editable
             h += `
         <div class="d-flex justify-content-between align-items-center mb-3">
-          <label for="${p}-label" class="form-label"><i class="bi bi-tag"></i> Etiqueta</label>
-          <button type="button" class="btn btn-outline-warning btn-sm" onclick="resetHorario('${p}')">
+          <label for="${p}-label" class="form-label">Etiqueta</label>
+          <button type="button" class="btn btn-outline-warning btn-sm"
+                  onclick="resetHorario('${p}')">
             <i class="bi bi-arrow-counterclockwise"></i> Reset horario
           </button>
         </div>
-        <input type="text" id="${p}-label" class="form-control mb-3" placeholder="Etiqueta">
+        <input type="text" id="${p}-label" class="form-control mb-3"
+               placeholder="${placeholderMap[type] || ''}">
       `;
+            // Campos comunes por tipo
             if (type === 'inspt') {
                 h += `
           <div class="row g-3 mb-3">
             <div class="col-md-8">
-              <label for="${p}-funciones" class="form-label"><i class="bi bi-gear-fill"></i> Funciones</label>
+              <label for="${p}-funciones" class="form-label">Funciones</label>
               <input type="text" id="${p}-funciones" class="form-control">
             </div>
             <div class="col-md-4">
-              <label for="${p}-ingreso" class="form-label"><i class="bi bi-calendar-event"></i> Ingreso</label>
+              <label for="${p}-ingreso" class="form-label">Ingreso</label>
               <input type="date" id="${p}-ingreso" class="form-control" value="${defaultIngreso()}">
             </div>
           </div>
           <div class="form-check form-check-inline mb-3">
             <input type="checkbox" id="${p}-nuevo" class="form-check-input">
-            <label class="form-check-label" for="${p}-nuevo"><i class="bi bi-star-fill"></i> Cargo nuevo</label>
+            <label class="form-check-label" for="${p}-nuevo">Cargo nuevo</label>
           </div>
           <div class="form-check form-check-inline mb-3">
             <input type="checkbox" id="${p}-licencia" class="form-check-input">
-            <label class="form-check-label" for="${p}-licencia"><i class="bi bi-file-earmark-medical-fill"></i> Licencia</label>
+            <label class="form-check-label" for="${p}-licencia">Licencia</label>
           </div>
         `;
             } else if (type === 'reparticion') {
                 h += `
           <div class="row g-3 mb-3">
             <div class="col-md-6">
-              <label for="${p}-reparticion" class="form-label"><i class="bi bi-building"></i> Repartición</label>
+              <label for="${p}-reparticion" class="form-label">Repartición</label>
               <input type="text" id="${p}-reparticion" class="form-control">
             </div>
             <div class="col-md-6">
-              <label for="${p}-calle" class="form-label"><i class="bi bi-geo-alt-fill"></i> Calle</label>
+              <label for="${p}-calle" class="form-label">Calle</label>
               <input type="text" id="${p}-calle" class="form-control">
             </div>
           </div>
           <div class="row g-3 mb-3">
             <div class="col-md-3">
-              <label for="${p}-numero" class="form-label"><i class="bi bi-hash"></i> Número</label>
+              <label for="${p}-numero" class="form-label">Número</label>
               <input type="text" id="${p}-numero" class="form-control">
             </div>
             <div class="col-md-4">
-              <label for="${p}-localidad" class="form-label"><i class="bi bi-geo-fill"></i> Localidad</label>
+              <label for="${p}-localidad" class="form-label">Localidad</label>
               <input type="text" id="${p}-localidad" class="form-control">
             </div>
             <div class="col-md-5">
-              <label for="${p}-provincia" class="form-label"><i class="bi bi-flag-fill"></i> Provincia</label>
+              <label for="${p}-provincia" class="form-label">Provincia</label>
               <input type="text" id="${p}-provincia" class="form-control">
             </div>
           </div>
           <div class="row g-3 mb-3">
             <div class="col-md-8">
-              <label for="${p}-funciones" class="form-label"><i class="bi bi-gear-fill"></i> Funciones</label>
+              <label for="${p}-funciones" class="form-label">Funciones</label>
               <input type="text" id="${p}-funciones" class="form-control">
             </div>
             <div class="col-md-4">
-              <label for="${p}-ingreso" class="form-label"><i class="bi bi-calendar-event"></i> Ingreso</label>
+              <label for="${p}-ingreso" class="form-label">Ingreso</label>
               <input type="date" id="${p}-ingreso" class="form-control" value="${defaultIngreso()}">
             </div>
           </div>
@@ -568,21 +596,21 @@
                 h += `
           <div class="row g-3 mb-3">
             <div class="col-md-6">
-              <label for="${p}-empleador" class="form-label"><i class="bi bi-person-badge-fill"></i> Empleador</label>
+              <label for="${p}-empleador" class="form-label">Empleador</label>
               <input type="text" id="${p}-empleador" class="form-control">
             </div>
             <div class="col-md-6">
-              <label for="${p}-lugar" class="form-label"><i class="bi bi-geo-alt"></i> Lugar</label>
+              <label for="${p}-lugar" class="form-label">Lugar</label>
               <input type="text" id="${p}-lugar" class="form-control">
             </div>
           </div>
           <div class="row g-3 mb-3">
             <div class="col-md-8">
-              <label for="${p}-funciones" class="form-label"><i class="bi bi-list-task"></i> Funciones</label>
+              <label for="${p}-funciones" class="form-label">Funciones</label>
               <input type="text" id="${p}-funciones" class="form-control">
             </div>
             <div class="col-md-4">
-              <label for="${p}-ingreso" class="form-label"><i class="bi bi-calendar-event"></i> Ingreso</label>
+              <label for="${p}-ingreso" class="form-label">Ingreso</label>
               <input type="date" id="${p}-ingreso" class="form-control" value="${defaultIngreso()}">
             </div>
           </div>
@@ -591,28 +619,28 @@
                 h += `
           <div class="row g-3 mb-3">
             <div class="col-md-6">
-              <label for="${p}-causa" class="form-label"><i class="bi bi-exclamation-diamond-fill"></i> Causa</label>
+              <label for="${p}-causa" class="form-label">Causa</label>
               <input type="text" id="${p}-causa" class="form-control">
             </div>
             <div class="col-md-6">
-              <label for="${p}-regimen" class="form-label"><i class="bi bi-book-fill"></i> Régimen</label>
+              <label for="${p}-regimen" class="form-label">Régimen</label>
               <input type="text" id="${p}-regimen" class="form-control">
             </div>
           </div>
           <div class="row g-3 mb-3">
             <div class="col-md-6">
-              <label for="${p}-desde" class="form-label"><i class="bi bi-calendar-event"></i> Desde</label>
+              <label for="${p}-desde" class="form-label">Desde</label>
               <input type="date" id="${p}-desde" class="form-control" value="${defaultIngreso()}">
             </div>
             <div class="col-md-6">
-              <label for="${p}-institucion" class="form-label"><i class="bi bi-bank-fill"></i> Institución</label>
+              <label for="${p}-institucion" class="form-label">Institución</label>
               <input type="text" id="${p}-institucion" class="form-control">
             </div>
           </div>
         `;
             }
 
-            // Horario y totales (si no es pasividad)
+            // Horario y Totales
             if (type !== 'pasividad') {
                 h += `
           <div class="mb-3">
@@ -623,22 +651,33 @@
                   ${['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'].map(d => `
                     <th class="text-capitalize">
                       ${d.slice(0, 3)}<br>
-                      <button type="button" class="btn btn-sm btn-outline-success add-day" data-day="${d}" data-scope="${p}" data-bs-toggle="tooltip" title="Agregar franja">
-                        <i class="bi bi-plus-circle"></i>
-                      </button>
+                      <button type="button"
+                              class="btn btn-sm btn-outline-success add-day"
+                              data-day="${d}"
+                              data-scope="${p}"
+                              data-bs-toggle="tooltip"
+                              title="Agregar franja"><i class="bi bi-plus-circle"></i></button>
                     </th>
                   `).join('')}
                 </tr>
               </thead>
-              <tbody><tr>
-                ${['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'].map(d => `
-                  <td class="schedule-day" data-day="${d}" data-scope="${p}"></td>
-                `).join('')}
-              </tr></tbody>
+              <tbody>
+                <tr>
+                  ${['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'].map(d => `
+                    <td class="schedule-day" data-day="${d}" data-scope="${p}"></td>
+                  `).join('')}
+                </tr>
+              </tbody>
             </table>
           </div>
-          <div class="mb-3"><strong><i class="bi bi-clock-history"></i> Total horas:</strong> <span id="${p}-totalHoras">0h 0m</span></div>
-          <div class="mb-3"><strong><i class="bi bi-hourglass-split"></i> Total horas Cátedra:</strong> <span id="${p}-totalHorasCat">0h 0m</span></div>
+          <div class="mb-3">
+            <strong>Total horas:</strong>
+            <span id="${p}-totalHoras">0h 0m</span>
+          </div>
+          <div class="mb-3">
+            <strong>Total horas Cátedra:</strong>
+            <span id="${p}-totalHorasCat">0h 0m</span>
+          </div>
         `;
             }
 
@@ -646,6 +685,7 @@
             return h;
         }
 
+        // Rellena datos de cargo en la pestaña
         function populateDynamic(p, c) {
             const type = c.type;
             if (type === 'inspt') {
@@ -672,25 +712,61 @@
                 document.getElementById(`${p}-desde`).value = c.desde || defaultIngreso();
                 document.getElementById(`${p}-institucion`).value = c.institucion || '';
             }
-            if (Array.isArray(c.horario)) {
-                setSchedule(p, c.horario);
-            }
+            if (c.horario) setSchedule(p, c.horario);
         }
 
+        // Añade una franja nueva
+        function addDayTemplate(day, scope = '') {
+            const selector = scope
+                ? `.schedule-day[data-day="${day}"][data-scope="${scope}"]`
+                : `.schedule-day[data-day="${day}"]`;
+            const cell = document.querySelector(selector);
+            if (!cell) return;
+            const row = document.createElement('div');
+            row.className = 'slot-row d-flex align-items-center flex-wrap gap-2 justify-content-center';
+            row.setAttribute('draggable', 'true');
+            row.innerHTML = `
+        <div class="d-flex align-items-center">
+          <label class="me-1 mb-0">Desde</label>
+          <input type="time" class="form-control form-control-sm me-2 from-slot" style="width:110px">
+        </div>
+        <div class="d-flex align-items-center">
+          <label class="me-1 mb-0">Hasta</label>
+          <input type="time" class="form-control form-control-sm me-2 to-slot" style="width:110px">
+        </div>
+        <button class="btn btn-sm btn-outline-danger remove-slot"
+                data-bs-toggle="tooltip" title="Eliminar franja"><i class="bi bi-trash"></i></button>
+      `;
+            // Drag & drop
+            row.addEventListener('dragstart', e => {
+                e.dataTransfer.setData('text/plain', '');
+                row.classList.add('dragging');
+            });
+            row.addEventListener('dragend', e => {
+                row.classList.remove('dragging');
+            });
+            cell.appendChild(row);
+        }
+
+        // Delegados globales
         document.addEventListener('click', e => {
+            // Agregar franja
             if (e.target.closest('.add-day')) {
                 const btn = e.target.closest('.add-day');
                 addDayTemplate(btn.dataset.day, btn.dataset.scope);
-                calculateHours(btn.dataset.scope);
+                calculateHours(btn.dataset.scope || '');
             }
+            // Eliminar franja
             if (e.target.closest('.remove-slot')) {
                 const btn = e.target.closest('.remove-slot');
                 const cell = btn.closest('.schedule-day');
-                const scope = cell.dataset.scope;
+                const scope = cell.dataset.scope || '';
                 btn.closest('.slot-row').remove();
                 calculateHours(scope);
             }
         });
+
+        // DnD: permitir soltar
         document.addEventListener('dragover', e => {
             if (e.target.closest('.schedule-day')) e.preventDefault();
         });
@@ -699,84 +775,36 @@
             const dragging = document.querySelector('.dragging');
             if (cell && dragging) {
                 cell.appendChild(dragging);
-                calculateHours(cell.dataset.scope);
+                calculateHours(cell.dataset.scope || '');
             }
         });
+
+        // Recalcular al cambiar hora
         document.addEventListener('input', e => {
             if (e.target.matches('.from-slot, .to-slot')) {
                 const cell = e.target.closest('.schedule-day');
-                calculateHours(cell.dataset.scope);
+                calculateHours(cell.dataset.scope || '');
             }
         });
 
-        function addDayTemplate(day, scope = '') {
-            const selector = `.schedule-day[data-day="${day}"][data-scope="${scope}"]`;
-            const cell = document.querySelector(selector);
-            if (!cell) return;
-            const row = document.createElement('div');
-            row.className = 'slot-row d-flex align-items-center flex-wrap gap-2 justify-content-center';
-            row.setAttribute('draggable', 'true');
-            row.innerHTML = `
-      <div class="d-flex align-items-center">
-        <label class="me-1 mb-0">Desde</label>
-        <input type="time" class="form-control form-control-sm me-2 from-slot" style="width:110px">
-      </div>
-      <div class="d-flex align-items-center">
-        <label class="me-1 mb-0">Hasta</label>
-        <input type="time" class="form-control form-control-sm me-2 to-slot" style="width:110px">
-      </div>
-      <button class="btn btn-sm btn-outline-danger remove-slot" data-bs-toggle="tooltip" title="Eliminar franja"><i class="bi bi-trash"></i></button>
-    `;
-            row.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', ''); row.classList.add('dragging'); });
-            row.addEventListener('dragend', () => row.classList.remove('dragging'));
-            cell.appendChild(row);
-        }
-
-        function extractSchedule(scope = '') {
-            const dias = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
-            const out = [];
-            dias.forEach(day => {
-                const cell = document.querySelector(`.schedule-day[data-day="${day}"][data-scope="${scope}"]`);
-                if (!cell) return;
-                const slots = [];
-                cell.querySelectorAll('.slot-row').forEach(r => {
-                    const f = r.querySelector('.from-slot').value, t = r.querySelector('.to-slot').value;
-                    if (f && t) slots.push({ from: f, to: t });
-                });
-                if (slots.length) out.push({ day, slots });
-            });
-            return out;
-        }
-
-        function calculateHours(scope = '') {
-            const rows = document.querySelectorAll(`.schedule-day[data-scope="${scope}"] .slot-row`);
-            let total = 0;
-            rows.forEach(r => {
-                const f = r.querySelector('.from-slot').value, t = r.querySelector('.to-slot').value;
-                if (f && t) {
-                    const [fh, fm] = f.split(':').map(Number), [th, tm] = t.split(':').map(Number);
-                    const diff = (th * 60 + tm) - (fh * 60 + fm);
-                    if (diff > 0) total += diff;
-                }
-            });
-            const h = Math.floor(total / 60), m = total % 60;
-            document.getElementById(`${scope}-totalHoras`).textContent = `${h}h ${m}m`;
-            const cat = total / 40, cH = Math.floor(cat), cM = Math.round((cat - cH) * 60);
-            const elC = document.getElementById(`${scope}-totalHorasCat`);
-            if (elC) elC.textContent = `${cH}h ${cM}m`;
-        }
-
+        // Reset horario
         function resetHorario(scope) {
-            document.querySelectorAll(`.schedule-day[data-scope="${scope}"] .slot-row`).forEach(r => r.remove());
+            document.querySelectorAll(`.schedule-day[data-scope="${scope}"] .slot-row`)
+                .forEach(r => r.remove());
             calculateHours(scope);
         }
 
+        // Rellena franja desde datos
         function setSchedule(scope, horario) {
             if (!Array.isArray(horario)) return;
             horario.forEach(entry => {
                 entry.slots.forEach(({ from, to }) => {
                     addDayTemplate(entry.day, scope);
-                    const cells = document.querySelectorAll(`.schedule-day[data-day="${entry.day}"][data-scope="${scope}"]`);
+                    const cells = document.querySelectorAll(
+                        scope
+                            ? `.schedule-day[data-day="${entry.day}"][data-scope="${scope}"]`
+                            : `.schedule-day[data-day="${entry.day}"]`
+                    );
                     const last = cells[cells.length - 1];
                     const row = last.querySelector('.slot-row:last-child');
                     if (row) {
@@ -785,24 +813,65 @@
                     }
                 });
             });
+            calculateHours(scope);
         }
 
-        function fillPersonal(d) {
-            const map = {
-                legajo: 'legajo', nombre: 'nombre', apellido: 'apellido',
-                dni: 'dni', fechaNacimiento: 'fechaNacimiento',
-                email: 'emailPersonal', telefono: 'telefono',
-                domicilio: 'domicilio', numero: 'numero',
-                localidad: 'localidad', provincia: 'provincia',
-                codigoPostal: 'codigoPostal'
-            };
-            Object.entries(map).forEach(([k, id]) => {
-                if (d[k] !== undefined) document.getElementById(id).value = d[k];
+        // Extrae datos de franja
+        function extractSchedule(scope = '') {
+            const dias = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+            const out = [];
+            dias.forEach(day => {
+                const selector = scope
+                    ? `.schedule-day[data-day="${day}"][data-scope="${scope}"]`
+                    : `.schedule-day[data-day="${day}"]`;
+                const cell = document.querySelector(selector);
+                if (!cell) return;
+                const slots = [];
+                cell.querySelectorAll('.slot-row').forEach(r => {
+                    const f = r.querySelector('.from-slot').value;
+                    const t = r.querySelector('.to-slot').value;
+                    if (f && t) slots.push({ from: f, to: t });
+                });
+                if (slots.length) out.push({ day, slots });
             });
+            return out;
         }
 
-        function defaultIngreso() {
-            return new Date().toISOString().substring(0, 10);
+        // Calcula totales
+        function calculateHours(scope = '') {
+            const selector = scope
+                ? `.schedule-day[data-scope="${scope}"] .slot-row`
+                : `.schedule-day:not([data-scope]) .slot-row`;
+            let total = 0;
+            document.querySelectorAll(selector).forEach(r => {
+                const f = r.querySelector('.from-slot').value;
+                const t = r.querySelector('.to-slot').value;
+                if (f && t) {
+                    const [fh, fm] = f.split(':').map(Number);
+                    const [th, tm] = t.split(':').map(Number);
+                    const diff = (th * 60 + tm) - (fh * 60 + fm);
+                    if (diff > 0) total += diff;
+                }
+            });
+            const h = Math.floor(total / 60), m = total % 60;
+            const idH = scope ? `${scope}-totalHoras` : 'tab-inspt-totalHoras';
+            document.getElementById(idH).textContent = `${h}h ${m}m`;
+            const cat = total / 40, cH = Math.floor(cat), cM = Math.round((cat - cH) * 60);
+            const idC = scope ? `${scope}-totalHorasCat` : 'tab-inspt-totalHorasCat';
+            const elC = document.getElementById(idC);
+            if (elC) elC.textContent = `${cH}h ${cM}m`;
+        }
+
+        // Helpers
+        function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+        function defaultIngreso() { return new Date().toISOString().substr(0, 10); }
+        function fillPersonal(d) {
+            document.getElementById('legajo').value = d.legajo || '';
+            ['nombre', 'apellido', 'dni', 'fechaNacimiento', 'email', 'telefono', 'domicilio', 'numero', 'localidad', 'provincia', 'codigoPostal']
+                .forEach(id => {
+                    const el = document.getElementById(id === 'email' ? 'emailPersonal' : id);
+                    if (el) el.value = d[id] || '';
+                });
         }
     </script>
 </body>
