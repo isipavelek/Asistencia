@@ -13,6 +13,7 @@
     body {
       background-color: #f8f9fa;
       padding: 3rem;
+      min-height: 100vh;
     }
     .container {
       max-width: 400px;
@@ -23,23 +24,47 @@
       padding-bottom: 0.75rem;
       font-size: 1.1rem;
     }
+    /* Overlay spinner */
+    #loadingOverlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255,255,255,0.8);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
   </style>
 </head>
 <body>
-  <div class="container text-center">
-    <h2 class="mb-4">📋 Panel de Asistencia</h2>
-    <div class="d-grid gap-3">
-      <a href="asistencia.html" class="btn btn-primary btn-menu">📝 Registrar Asistencia</a>
-      <a href="visor.html" class="btn btn-secondary btn-menu">📖 Ver Asistencias</a>
-      <div id="botonAdmin"></div>
-      <a href="resumen_diario.html" class="btn btn-warning btn-menu">📅 Resumen Diario</a>
-      <a href="resumen_mensual.html" class="btn btn-dark btn-menu">📆 Resumen Mensual</a>
-      <a href="cargarAB.html" class="btn btn-dark btn-menu">📝 Cargar AB</a>
-      <button class="btn btn-outline-danger btn-menu" onclick="cerrarSesion()">🔒 Cerrar Sesión</button>
+
+  <!-- Spinner overlay mientras Firebase carga -->
+  <div id="loadingOverlay">
+    <div class="spinner-border text-primary mb-3" role="status">
+      <span class="visually-hidden">Cargando...</span>
     </div>
+    <div>Cargando datos de Firebase...</div>
   </div>
 
+  <!-- Contenido principal, oculto hasta que Firebase esté listo -->
+  <div id="appContent" class="d-none">
+    <div class="container text-center">
+      <h2 class="mb-4">📋 Panel de Asistencia</h2>
+      <div class="d-grid gap-3">
+        <a href="asistencia.html" class="btn btn-primary btn-menu">📝 Registrar Asistencia</a>
+        <a href="visor.html" class="btn btn-secondary btn-menu">📖 Ver Asistencias</a>
+        <div id="botonAdmin"></div>
+        <a href="resumen_diario.html" class="btn btn-warning btn-menu">📅 Resumen Diario</a>
+        <a href="resumen_mensual.html" class="btn btn-dark btn-menu">📆 Resumen Mensual</a>
+        <a href="cargarAB.html" class="btn btn-dark btn-menu">📝 Cargar AB</a>
+        <button class="btn btn-outline-danger btn-menu" onclick="cerrarSesion()">🔒 Cerrar Sesión</button>
+      </div>
+    </div>
+  </div><!-- /#appContent -->
+
   <script>
+    // Configuración de Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyC4v9h8eXWRBnzTD-VDDludynd5nzOv4xc",
       authDomain: "est-utn-c0988.firebaseapp.com",
@@ -48,24 +73,32 @@
       messagingSenderId: "788767016042",
       appId: "1:788767016042:web:8a480a74e3b1ef0de97613"
     };
-
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
 
     auth.onAuthStateChanged(async user => {
-      if (!user) return window.location.href = "index.html";
+      if (!user) {
+        window.location.href = "index.html";
+        return;
+      }
 
+      // Compruebo rol admin
       const doc = await db.collection("usuarios").doc(user.uid).get();
       if (doc.exists && doc.data().rol === "admin") {
         document.getElementById("botonAdmin").innerHTML = `
           <a href="personas_admin.html" class="btn btn-info btn-menu">👥 Administrar Personas</a>`;
       }
+
+      // Oculto overlay y muestro contenido
+      document.getElementById("loadingOverlay").classList.add("d-none");
+      document.getElementById("appContent").classList.remove("d-none");
     });
 
     function cerrarSesion() {
-      auth.signOut().then(() => window.location.href = "indexh.html");
+      auth.signOut().then(() => window.location.href = "index.html");
     }
   </script>
+
 </body>
 </html>

@@ -2,502 +2,502 @@
 <html lang="es">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>🔄 Cargar Datos de Usuario</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
-    <style>
-        body {
-            background-color: #f8f9fa;
-            padding: 2rem;
-        }
-
-        .slot-row {
-            align-items: center;
-            cursor: grab;
-        }
-
-        #legajo {
-            max-width: 150px;
-        }
-
-        .schedule-table th,
-        .schedule-table td {
-            text-align: center;
-            vertical-align: top;
-            min-width: 120px;
-        }
-
-        .nav-item .btn-close {
-            opacity: 0;
-            transition: opacity .2s;
-        }
-
-        .nav-item:hover .btn-close {
-            opacity: 1;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>🔄 Cargar Datos de Usuario</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+  <style>
+    body {
+      background-color: #f8f9fa;
+      padding: 2rem;
+    }
+    .slot-row {
+      align-items: center;
+      cursor: grab;
+    }
+    #legajo {
+      max-width: 150px;
+    }
+    .schedule-table th,
+    .schedule-table td {
+      text-align: center;
+      vertical-align: top;
+      min-width: 120px;
+    }
+    .nav-item .btn-close {
+      opacity: 0;
+      transition: opacity .2s;
+    }
+    .nav-item:hover .btn-close {
+      opacity: 1;
+    }
+    /* Spinner overlay */
+    #loadingOverlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255,255,255,0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      flex-direction: column;
+    }
+    #appContent.d-none {
+      display: none;
+    }
+  </style>
 </head>
 
 <body>
+  <!-- Spinner visible until Firebase & data load -->
+  <div id="loadingOverlay">
+    <div class="spinner-border text-primary mb-3" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+    <div>Cargando datos de Firebase…</div>
+  </div>
+
+  <!-- Main app content, hidden initially -->
+  <div id="appContent" class="d-none">
     <div class="container py-4">
-        <h2 class="mb-4">🔄 Cargar Datos de Usuario</h2>
+      <!-- HEADER: título y botones alineados -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">🔄 Cargar Datos de Usuario</h2>
+        <div class="d-flex gap-2">
+          <button id="saveBtn" class="btn btn-success">
+            <i class="bi bi-save"></i> Guardar datos
+          </button>
+          <a href="verAB.html" target="_blank" id="verAbBtn" class="btn btn-outline-secondary">
+            Ver AB
+          </a>
+          <a href="menu.html" class="btn btn-outline-secondary">
+            🏠 Menú Principal
+          </a>
+        </div>
+      </div>
 
-        <!-- Toasts -->
-        <div class="position-fixed bottom-0 end-0 p-3" style="z-index:11">
-            <div id="toastSuccess" class="toast fade align-items-center text-bg-success border-0" role="alert"
-                aria-live="assertive" aria-atomic="true">
-                <div class="d-flex">
-                    <div class="toast-body">¡Guardado correctamente!</div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
-                        aria-label="Cerrar"></button>
+      <!-- Toasts -->
+      <div class="position-fixed bottom-0 end-0 p-3" style="z-index:11">
+        <div id="toastSuccess" class="toast fade align-items-center text-bg-success border-0" role="alert"
+          aria-live="assertive" aria-atomic="true">
+          <div class="d-flex">
+            <div class="toast-body">¡Guardado correctamente!</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+              aria-label="Cerrar"></button>
+          </div>
+        </div>
+        <div id="toastError" class="toast fade align-items-center text-bg-danger border-0" role="alert"
+          aria-live="assertive" aria-atomic="true">
+          <div class="d-flex">
+            <div class="toast-body" id="toastErrorMsg">Error al guardar.</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+              aria-label="Cerrar"></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <ul class="nav nav-tabs" id="cargosTab" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="tab-personales-tab" data-bs-toggle="tab"
+            data-bs-target="#tab-personales" type="button" role="tab">
+            <i class="bi bi-person-circle"></i> Datos Personales
+          </button>
+        </li>
+        <li class="ms-auto d-flex gap-2 align-items-center">
+          <button id="addTabBtn" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg"></i> Agregar pestaña
+          </button>
+        </li>
+      </ul>
+
+      <div class="tab-content border border-top-0 p-4" id="cargosTabContent">
+        <!-- Datos Personales -->
+        <div class="tab-pane fade show active" id="tab-personales" role="tabpanel">
+          <form id="form-personales" class="needs-validation" novalidate>
+            <div class="row g-3 mb-3">
+              <div class="col-auto">
+                <label class="form-label" for="legajo"><i class="bi bi-credit-card-2-front"></i> Legajo</label>
+                <input type="text" id="legajo" class="form-control" maxlength="10" placeholder="Legajo" required>
+                <div class="valid-feedback"><i class="bi bi-check-circle-fill"></i></div>
+                <div class="invalid-feedback"><i class="bi bi-x-circle-fill"></i> El legajo es obligatorio.</div>
+              </div>
+              <div class="col-md-5">
+                <label class="form-label" for="nombre"><i class="bi bi-person-fill"></i> Nombre</label>
+                <input type="text" id="nombre" class="form-control" required>
+                <div class="valid-feedback"><i class="bi bi-check-circle-fill"></i></div>
+                <div class="invalid-feedback"><i class="bi bi-x-circle-fill"></i> El nombre es obligatorio.</div>
+              </div>
+              <div class="col-md-5">
+                <label class="form-label" for="apellido"><i class="bi bi-person-fill"></i> Apellido</label>
+                <input type="text" id="apellido" class="form-control" required>
+                <div class="valid-feedback"><i class="bi bi-check-circle-fill"></i></div>
+                <div class="invalid-feedback"><i class="bi bi-x-circle-fill"></i> El apellido es obligatorio.</div>
+              </div>
+            </div>
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label" for="dni"><i class="bi bi-credit-card"></i> DNI</label>
+                <input type="text" id="dni" class="form-control" required>
+                <div class="valid-feedback"><i class="bi bi-check-circle-fill"></i></div>
+                <div class="invalid-feedback"><i class="bi bi-x-circle-fill"></i> El DNI es obligatorio.</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="fechaNacimiento"><i class="bi bi-calendar-event"></i> Fecha de nacimiento</label>
+                <input type="date" id="fechaNacimiento" class="form-control" required>
+                <div class="valid-feedback"><i class="bi bi-check-circle-fill"></i></div>
+                <div class="invalid-feedback"><i class="bi bi-x-circle-fill"></i> La fecha de nacimiento es obligatoria.</div>
+              </div>
+            </div>
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label" for="emailPersonal"><i class="bi bi-envelope-fill"></i> Email</label>
+                <input type="email" id="emailPersonal" class="form-control" required>
+                <div class="valid-feedback"><i class="bi bi-check-circle-fill"></i></div>
+                <div class="invalid-feedback"><i class="bi bi-x-circle-fill"></i> Introduce un email válido.</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="telefono"><i class="bi bi-telephone-fill"></i> Teléfono</label>
+                <input type="text" id="telefono" class="form-control" required>
+                <div class="valid-feedback"><i class="bi bi-check-circle-fill"></i></div>
+                <div class="invalid-feedback"><i class="bi bi-x-circle-fill"></i> El teléfono es obligatorio.</div>
+              </div>
+            </div>
+            <fieldset class="border p-3 mb-3">
+              <legend class="float-none w-auto px-2"><i class="bi bi-house-fill"></i> Domicilio</legend>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label" for="domicilio">Calle</label>
+                  <input type="text" id="domicilio" class="form-control" placeholder="Calle" required>
+                  <div class="valid-feedback"><i class="bi bi-check-circle-fill"></i></div>
+                  <div class="invalid-feedback"><i class="bi bi-x-circle-fill"></i> La calle es obligatoria.</div>
                 </div>
-            </div>
-            <div id="toastError" class="toast fade align-items-center text-bg-danger border-0" role="alert"
-                aria-live="assertive" aria-atomic="true">
-                <div class="d-flex">
-                    <div class="toast-body" id="toastErrorMsg">Error al guardar.</div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
-                        aria-label="Cerrar"></button>
+                <div class="col-md-3">
+                  <label class="form-label" for="numero">Número</label>
+                  <input type="text" id="numero" class="form-control" placeholder="Nº" required>
+                  <div class="valid-feedback"><i class="bi bi-check-circle-fill"></i></div>
+                  <div class="invalid-feedback"><i class="bi bi-x-circle-fill"></i> El número es obligatorio.</div>
                 </div>
-            </div>
+                <div class="col-md-3">
+                  <label class="form-label" for="codigoPostal">C. Postal</label>
+                  <input type="text" id="codigoPostal" class="form-control" required>
+                  <div class="valid-feedback"><i class="bi bi-check-circle-fill"></i></div>
+                  <div class="invalid-feedback"><i class="bi bi-x-circle-fill"></i> El código postal es obligatorio.</div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="localidad">Localidad</label>
+                  <input type="text" id="localidad" class="form-control" required>
+                  <div class="valid-feedback"><i class="bi bi-check-circle-fill"></i></div>
+                  <div class="invalid-feedback"><i class="bi bi-x-circle-fill"></i> La localidad es obligatoria.</div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="provincia">Provincia</label>
+                  <input type="text" id="provincia" class="form-control" required>
+                  <div class="valid-feedback"><i class="bi bi-check-circle-fill"></i></div>
+                  <div class="invalid-feedback"><i class="bi bi-x-circle-fill"></i> La provincia es obligatoria.</div>
+                </div>
+              </div>
+            </fieldset>
+          </form>
         </div>
-
-        <!-- Tabs -->
-        <ul class="nav nav-tabs" id="cargosTab" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="tab-personales-tab" data-bs-toggle="tab"
-                    data-bs-target="#tab-personales" type="button" role="tab">
-                    <i class="bi bi-person-circle"></i> Datos Personales
-                </button>
-            </li>
-            <li class="ms-auto d-flex gap-2 align-items-center">
-                <button id="addTabBtn" class="btn btn-primary btn-sm">
-                    <i class="bi bi-plus-lg"></i> Agregar pestaña
-                </button>
-                <!-- Nuevo botón Ver AB -->
-                <a href="verAB.html" target="_blank" id="verAbBtn"
-                    class="btn btn-outline-secondary btn-sm">
-                    Ver AB
-                </a>
-            </li>
-        </ul>
-
-        <div class="tab-content border border-top-0 p-4" id="cargosTabContent">
-            <!-- Datos Personales -->
-            <div class="tab-pane fade show active" id="tab-personales" role="tabpanel">
-                <form id="form-personales" class="needs-validation" novalidate>
-                    <div class="row g-3 mb-3">
-                        <div class="col-auto">
-                            <label class="form-label" for="legajo"><i class="bi bi-credit-card-2-front"></i>
-                                Legajo</label>
-                            <input type="text" id="legajo" class="form-control" maxlength="10" placeholder="Legajo"
-                                required>
-                            <div class="valid-feedback"><i class="bi bi-check-circle-fill"></i></div>
-                            <div class="invalid-feedback"><i class="bi bi-x-circle-fill"></i> El legajo es obligatorio.
-                            </div>
-                        </div>
-                        <div class="col-md-5">
-                            <label class="form-label" for="nombre"><i class="bi bi-person-fill"></i> Nombre</label>
-                            <input type="text" id="nombre" class="form-control" required>
-                            <div class="valid-feedback"><i class="bi bi-check-circle-fill"></i></div>
-                            <div class="invalid-feedback"><i class="bi bi-x-circle-fill"></i> El nombre es obligatorio.
-                            </div>
-                        </div>
-                        <div class="col-md-5">
-                            <label class="form-label" for="apellido"><i class="bi bi-person-fill"></i> Apellido</label>
-                            <input type="text" id="apellido" class="form-control" required>
-                            <div class="valid-feedback"><i class="bi bi-check-circle-fill"></i></div>
-                            <div class="invalid-feedback"><i class="bi bi-x-circle-fill"></i> El apellido es
-                                obligatorio.</div>
-                        </div>
-                    </div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label" for="dni"><i class="bi bi-credit-card"></i> DNI</label>
-                            <input type="text" id="dni" class="form-control" required>
-                            <div class="valid-feedback"><i class="bi bi-check-circle-fill"></i></div>
-                            <div class="invalid-feedback"><i class="bi bi-x-circle-fill"></i> El DNI es obligatorio.
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label" for="fechaNacimiento"><i class="bi bi-calendar-event"></i> Fecha
-                                de nacimiento</label>
-                            <input type="date" id="fechaNacimiento" class="form-control" required>
-                            <div class="valid-feedback"><i class="bi bi-check-circle-fill"></i></div>
-                            <div class="invalid-feedback"><i class="bi bi-x-circle-fill"></i> La fecha de nacimiento es
-                                obligatoria.</div>
-                        </div>
-                    </div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label" for="emailPersonal"><i class="bi bi-envelope-fill"></i>
-                                Email</label>
-                            <input type="email" id="emailPersonal" class="form-control" required>
-                            <div class="valid-feedback"><i class="bi bi-check-circle-fill"></i></div>
-                            <div class="invalid-feedback"><i class="bi bi-x-circle-fill"></i> Introduce un email válido.
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label" for="telefono"><i class="bi bi-telephone-fill"></i>
-                                Teléfono</label>
-                            <input type="text" id="telefono" class="form-control" required>
-                            <div class="valid-feedback"><i class="bi bi-check-circle-fill"></i></div>
-                            <div class="invalid-feedback"><i class="bi bi-x-circle-fill"></i> El teléfono es
-                                obligatorio.</div>
-                        </div>
-                    </div>
-                    <fieldset class="border p-3 mb-3">
-                        <legend class="float-none w-auto px-2"><i class="bi bi-house-fill"></i> Domicilio</legend>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label" for="domicilio">Calle</label>
-                                <input type="text" id="domicilio" class="form-control" placeholder="Calle" required>
-                                <div class="valid-feedback"><i class="bi bi-check-circle-fill"></i></div>
-                                <div class="invalid-feedback"><i class="bi bi-x-circle-fill"></i> La calle es
-                                    obligatoria.</div>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label" for="numero">Número</label>
-                                <input type="text" id="numero" class="form-control" placeholder="Nº" required>
-                                <div class="valid-feedback"><i class="bi bi-check-circle-fill"></i></div>
-                                <div class="invalid-feedback"><i class="bi bi-x-circle-fill"></i> El número es
-                                    obligatorio.</div>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label" for="codigoPostal">C. Postal</label>
-                                <input type="text" id="codigoPostal" class="form-control" required>
-                                <div class="valid-feedback"><i class="bi bi-check-circle-fill"></i></div>
-                                <div class="invalid-feedback"><i class="bi bi-x-circle-fill"></i> El código postal es
-                                    obligatorio.</div>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label" for="localidad">Localidad</label>
-                                <input type="text" id="localidad" class="form-control" required>
-                                <div class="valid-feedback"><i class="bi bi-check-circle-fill"></i></div>
-                                <div class="invalid-feedback"><i class="bi bi-x-circle-fill"></i> La localidad es
-                                    obligatoria.</div>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label" for="provincia">Provincia</label>
-                                <input type="text" id="provincia" class="form-control" required>
-                                <div class="valid-feedback"><i class="bi bi-check-circle-fill"></i></div>
-                                <div class="invalid-feedback"><i class="bi bi-x-circle-fill"></i> La provincia es
-                                    obligatoria.</div>
-                            </div>
-                        </div>
-                    </fieldset>
-                </form>
-            </div>
-            <!-- pestañas dinámicas aquí -->
-        </div>
-
-        <!-- Gráfico de resumen -->
-        <div class="mt-4">
-            <canvas id="chartHoras" height="100"></canvas>
-        </div>
-        <div class="text-end mt-3">
-            <button id="saveBtn" class="btn btn-success"><i class="bi bi-save"></i> Guardar datos</button>
-        </div>
+        <!-- pestañas dinámicas aquí -->
+      </div>
     </div>
 
     <!-- Modal Agregar Pestaña -->
     <div class="modal fade" id="addTabModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-sm">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Agregar nueva pestaña</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <label for="newTabType" class="form-label"><i class="bi bi-layout-text-window-reverse"></i>
-                                Tipo de pestaña</label>
-                            <select id="newTabType" class="form-select">
-                                <option value="inspt">Cargo INSPT</option>
-                                <option value="reparticion">Otra repartición</option>
-                                <option value="tarea">Tarea/Actividad</option>
-                                <option value="pasividad">Pasividad</option>
-                            </select>
-                        </div>
-                        <div class="col-12">
-                            <label for="newTabLabel" class="form-label"><i class="bi bi-tag"></i> Etiqueta</label>
-                            <input type="text" id="newTabLabel" class="form-control" placeholder="Nombre descriptivo">
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button id="confirmAddTab" type="button" class="btn btn-primary">Agregar</button>
-                </div>
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Agregar nueva pestaña</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-12">
+                <label for="newTabType" class="form-label"><i class="bi bi-layout-text-window-reverse"></i>
+                  Tipo de pestaña</label>
+                <select id="newTabType" class="form-select">
+                  <option value="inspt">Cargo INSPT</option>
+                  <option value="reparticion">Otra repartición</option>
+                  <option value="tarea">Tarea/Actividad</option>
+                  <option value="pasividad">Pasividad</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label for="newTabLabel" class="form-label"><i class="bi bi-tag"></i> Etiqueta</label>
+                <input type="text" id="newTabLabel" class="form-control" placeholder="Nombre descriptivo">
+              </div>
             </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button id="confirmAddTab" type="button" class="btn btn-primary">Agregar</button>
+          </div>
         </div>
+      </div>
     </div>
+  </div>
 
-    <!-- Chart.js, Bootstrap JS + Popper, Firebase -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <!-- Script libs -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-    <script>
-        // Configuración Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyC4v9h8eXWRBnzTD-VDDludynd5nzOv4xc",
-            authDomain: "est-utn-c0988.firebaseapp.com",
-            projectId: "est-utn-c0988",
-            storageBucket: "est-utn-c0988.firebasestorage.app",
-            messagingSenderId: "788767016042",
-            appId: "1:788767016042:web:8a480a74e3b1ef0de97613",
-            measurementId: "G-LG1H6JGJDH"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth(), db = firebase.firestore();
-        let currentUser = null;
+  <script>
+    // Configuración Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyC4v9h8eXWRBnzTD-VDDludynd5nzOv4xc",
+      authDomain: "est-utn-c0988.firebaseapp.com",
+      projectId: "est-utn-c0988",
+      storageBucket: "est-utn-c0988.firebasestorage.app",
+      messagingSenderId: "788767016042",
+      appId: "1:788767016042:web:8a480a74e3b1ef0de97613",
+      measurementId: "G-LG1H6JGJDH"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth(), db = firebase.firestore();
 
-        // Toasts
-        const toastSuccess = new bootstrap.Toast(document.getElementById('toastSuccess'));
-        const toastError = new bootstrap.Toast(document.getElementById('toastError'));
+    // Toasts
+    const toastSuccess = new bootstrap.Toast(document.getElementById('toastSuccess'));
+    const toastError   = new bootstrap.Toast(document.getElementById('toastError'));
 
-        // Mapas de texto e iconos
-        const placeholderMap = {
-            inspt: 'Cargo INSPT',
-            reparticion: 'Otra Rep.',
-            tarea: 'Tarea/Actividad',
-            pasividad: 'Pasividad'
-        };
-        const suffixMap = {
-            inspt: ' (INSPT)',
-            reparticion: '',
-            tarea: '',
-            pasividad: ''
-        };
-        const iconMap = {
-            inspt: 'bi-briefcase-fill',
-            reparticion: 'bi-building',
-            tarea: 'bi-list-task',
-            pasividad: 'bi-clock-history'
-        };
+    // Mapas de texto e iconos
+    const placeholderMap = {
+      inspt: 'Cargo INSPT',
+      reparticion: 'Otra Rep.',
+      tarea: 'Tarea/Actividad',
+      pasividad: 'Pasividad'
+    };
+    const suffixMap = {
+      inspt: ' (INSPT)',
+      reparticion: '',
+      tarea: '',
+      pasividad: ''
+    };
+    const iconMap = {
+      inspt: 'bi-briefcase-fill',
+      reparticion: 'bi-building',
+      tarea: 'bi-list-task',
+      pasividad: 'bi-clock-history'
+    };
 
-        // Validación inline
-        function applyValidation(form) {
-            form.querySelectorAll('input').forEach(input => {
-                input.addEventListener('blur', () => {
-                    input.classList.toggle('is-valid', input.checkValidity());
-                    input.classList.toggle('is-invalid', !input.checkValidity());
-                });
-            });
-        }
-
-        // Inicia la app
-        auth.onAuthStateChanged(u => {
-            if (!u) return window.location.href = 'login.html';
-            currentUser = u;
-            init();
+    // Validación inline
+    function applyValidation(form) {
+      form.querySelectorAll('input').forEach(input => {
+        input.addEventListener('blur', () => {
+          input.classList.toggle('is-valid', input.checkValidity());
+          input.classList.toggle('is-invalid', !input.checkValidity());
         });
+      });
+    }
 
-        function init() {
-            applyValidation(document.getElementById('form-personales'));
-            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el =>
-                new bootstrap.Tooltip(el)
-            );
-            document.getElementById('addTabBtn').addEventListener('click', () =>
-                new bootstrap.Modal(document.getElementById('addTabModal')).show()
-            );
-            document.getElementById('confirmAddTab').addEventListener('click', () => {
-                const t = document.getElementById('newTabType').value;
-                const l = document.getElementById('newTabLabel').value.trim();
-                addDynamicTab(t, l);
-                bootstrap.Modal.getInstance(document.getElementById('addTabModal')).hide();
-            });
-            document.getElementById('saveBtn').addEventListener('click', saveData);
-            loadData();
+    // Inicialización tras auth
+    auth.onAuthStateChanged(async user => {
+      if (!user) {
+        window.location.href = 'index.html';
+        return;
+      }
+      await initApp();
+      document.getElementById('loadingOverlay').classList.add('d-none');
+      document.getElementById('appContent').classList.remove('d-none');
+    });
+
+    async function initApp() {
+      applyValidation(document.getElementById('form-personales'));
+      document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el =>
+        new bootstrap.Tooltip(el)
+      );
+      document.getElementById('addTabBtn').addEventListener('click', () =>
+        new bootstrap.Modal(document.getElementById('addTabModal')).show()
+      );
+      document.getElementById('confirmAddTab').addEventListener('click', () => {
+        const t = document.getElementById('newTabType').value;
+        const l = document.getElementById('newTabLabel').value.trim();
+        addDynamicTab(t, l);
+        bootstrap.Modal.getInstance(document.getElementById('addTabModal')).hide();
+      });
+      document.getElementById('saveBtn').addEventListener('click', () => saveData(false));
+      await loadData();
+    }
+
+    async function loadData() {
+      const uref = db.collection('usuarios').doc(auth.currentUser.uid);
+      const doc = await uref.get();
+      if (doc.exists) fillPersonal(doc.data());
+
+      const snap = await uref.collection('cargos').get();
+      const cargos = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => {
+          const pA = a.type === 'inspt' ? 0 : 1, pB = b.type === 'inspt' ? 0 : 1;
+          if (pA !== pB) return pA - pB;
+          if (a.type === 'inspt') {
+            const nA = a.nuevo ? 0 : 1, nB = b.nuevo ? 0 : 1;
+            if (nA !== nB) return nA - nB;
+          }
+          return (a.order || 0) - (b.order || 0);
+        });
+      cargos.forEach(c => addDynamicTab(c.type, c.label || '', c));
+      drawResumen();
+    }
+
+    async function saveData(silent) {
+      const form = document.getElementById('form-personales');
+      if (!silent && !form.checkValidity()) {
+        form.classList.add('was-validated');
+        return;
+      }
+      const btn = document.getElementById('saveBtn'), orig = btn.innerHTML;
+      btn.disabled = true;
+      if (!silent) btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...`;
+
+      try {
+        const uref = db.collection('usuarios').doc(auth.currentUser.uid);
+        // Datos personales
+        const per = {
+          legajo: document.getElementById('legajo').value,
+          nombre: document.getElementById('nombre').value,
+          apellido: document.getElementById('apellido').value,
+          dni: document.getElementById('dni').value,
+          fechaNacimiento: document.getElementById('fechaNacimiento').value,
+          email: document.getElementById('emailPersonal').value,
+          telefono: document.getElementById('telefono').value,
+          domicilio: document.getElementById('domicilio').value,
+          numero: document.getElementById('numero').value,
+          localidad: document.getElementById('localidad').value,
+          provincia: document.getElementById('provincia').value,
+          codigoPostal: document.getElementById('codigoPostal').value
+        };
+        await uref.set(per, { merge: true });
+
+        // Borrar anteriores
+        const oldSnap = await uref.collection('cargos').get();
+        const batch = db.batch();
+        oldSnap.forEach(s => batch.delete(s.ref));
+        await batch.commit();
+
+        // Guardar nuevas pestañas
+        const panes = Array.from(document.querySelectorAll('.tab-pane[data-type]'));
+        for (let i = 0; i < panes.length; i++) {
+          const pane = panes[i], type = pane.dataset.type, id = pane.id;
+          const raw = pane.querySelector(`#${id}-label`).value.trim();
+          const cargo = { type, label: raw, order: i };
+
+          if (type === 'inspt') {
+            cargo.funciones = pane.querySelector(`#${id}-funciones`).value;
+            cargo.ingreso = pane.querySelector(`#${id}-ingreso`).value;
+            cargo.nuevo = pane.querySelector(`#${id}-nuevo`).checked;
+            cargo.licencia = pane.querySelector(`#${id}-licencia`).checked;
+            cargo.horario = extractSchedule(id);
+          } else if (type === 'reparticion') {
+            cargo.reparticion = pane.querySelector(`#${id}-reparticion`).value;
+            cargo.calle       = pane.querySelector(`#${id}-calle`).value;
+            cargo.numero      = pane.querySelector(`#${id}-numero`).value;
+            cargo.localidad   = pane.querySelector(`#${id}-localidad`).value;
+            cargo.provincia   = pane.querySelector(`#${id}-provincia`).value;
+            cargo.funciones   = pane.querySelector(`#${id}-funciones`).value;
+            cargo.ingreso     = pane.querySelector(`#${id}-ingreso`).value;
+            cargo.horario     = extractSchedule(id);
+          } else if (type === 'tarea') {
+            cargo.empleador  = pane.querySelector(`#${id}-empleador`).value;
+            cargo.lugar      = pane.querySelector(`#${id}-lugar`).value;
+            cargo.funciones  = pane.querySelector(`#${id}-funciones`).value;
+            cargo.ingreso    = pane.querySelector(`#${id}-ingreso`).value;
+            cargo.horario    = extractSchedule(id);
+          } else if (type === 'pasividad') {
+            cargo.causa      = pane.querySelector(`#${id}-causa`).value;
+            cargo.regimen    = pane.querySelector(`#${id}-regimen`).value;
+            cargo.desde      = pane.querySelector(`#${id}-desde`).value;
+            cargo.institucion= pane.querySelector(`#${id}-institucion`).value;
+          }
+
+          await uref.collection('cargos').add(cargo);
         }
 
-        async function loadData() {
-            const uref = db.collection('usuarios').doc(currentUser.uid);
-            const doc = await uref.get();
-            if (doc.exists) fillPersonal(doc.data());
+        if (!silent) toastSuccess.show();
+        drawResumen();
+      } catch (e) {
+        document.getElementById('toastErrorMsg').textContent = e.message;
+        toastError.show();
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = orig;
+      }
+    }
 
-            const snap = await uref.collection('cargos').get();
-            const cargos = snap.docs
-                .map(d => ({ id: d.id, ...d.data() }))
-                .sort((a, b) => {
-                    const pA = a.type === 'inspt' ? 0 : 1, pB = b.type === 'inspt' ? 0 : 1;
-                    if (pA !== pB) return pA - pB;
-                    if (a.type === 'inspt') {
-                        const nA = a.nuevo ? 0 : 1, nB = b.nuevo ? 0 : 1;
-                        if (nA !== nB) return nA - nB;
-                    }
-                    return (a.order || 0) - (b.order || 0);
-                });
-            cargos.forEach(c => addDynamicTab(c.type, c.label || '', c));
-            drawResumen();
+    function drawResumen() {
+      const labels = [], datos = [];
+      document.querySelectorAll('li.nav-item button.nav-link').forEach(btn => {
+        const target = btn.getAttribute('data-bs-target');
+        if (!target) return;
+        const scope = target.slice(1);
+        const text = document.getElementById(`${scope}-totalHoras`)?.textContent || '0h 0m';
+        labels.push(btn.textContent.trim());
+        datos.push(parseInt(text));
+      });
+      const ctx = document.getElementById('chartHoras')?.getContext('2d');
+      if (!ctx) return;
+      if (window.chartInstance) window.chartInstance.destroy();
+      window.chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'Horas semanales', data: datos }] },
+        options: { responsive: true, animation: { duration: 500 } }
+      });
+    }
+
+    function addDynamicTab(type, labelRaw = '', cargo) {
+      const unique = Date.now() + '-' + Math.floor(Math.random() * 1000);
+      const id = `tab-${type}-${unique}`;
+      const li = document.createElement('li');
+      li.className = 'nav-item'; li.role = 'presentation';
+      const icon = `<i class="bi ${iconMap[type]}"></i> `;
+      li.innerHTML = `
+        <button class="nav-link" id="${id}-tab"
+                data-bs-toggle="tab" data-bs-target="#${id}"
+                type="button" role="tab">${icon}${labelRaw || placeholderMap[type]}${suffixMap[type]}</button>
+        <button type="button" class="btn-close ms-1" aria-label="Cerrar"></button>
+      `;
+      document.getElementById('cargosTab').insertBefore(li, document.querySelector('.ms-auto'));
+
+      const pane = document.createElement('div');
+      pane.className = 'tab-pane fade needs-validation';
+      pane.id = id; pane.role = 'tabpanel';
+      pane.dataset.type = type;
+      pane.innerHTML = getFormHTML(type, id);
+      document.getElementById('cargosTabContent').appendChild(pane);
+
+      new bootstrap.Tab(li.querySelector('.nav-link')).show();
+      applyValidation(pane);
+
+      if (cargo) {
+        populateDynamic(id, cargo);
+        calculateHours(id);
+      }
+
+      li.querySelector('.btn-close').addEventListener('click', () => {
+        if (confirm(`Eliminar pestaña “${labelRaw || placeholderMap[type]}”?`)) {
+          pane.remove(); li.remove(); drawResumen();
         }
+      });
 
-        async function saveData(silent = false) {
-            const form = document.getElementById('form-personales');
-            if (!silent && !form.checkValidity()) {
-                form.classList.add('was-validated');
-                return;
-            }
-            const btn = document.getElementById('saveBtn'), orig = btn.innerHTML;
-            btn.disabled = true;
-            if (!silent) btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...`;
+      const inp = pane.querySelector(`#${id}-label`),
+            tabBtn = li.querySelector('.nav-link');
+      inp.value = cargo?.label || '';
+      inp.addEventListener('input', () => {
+        const txt = inp.value.trim() || placeholderMap[type];
+        tabBtn.innerHTML = icon + txt + suffixMap[type];
+      });
+    }
 
-            try {
-                const uref = db.collection('usuarios').doc(currentUser.uid);
-                // 1) Datos personales
-                const per = {
-                    legajo: document.getElementById('legajo').value,
-                    nombre: document.getElementById('nombre').value,
-                    apellido: document.getElementById('apellido').value,
-                    dni: document.getElementById('dni').value,
-                    fechaNacimiento: document.getElementById('fechaNacimiento').value,
-                    email: document.getElementById('emailPersonal').value,
-                    telefono: document.getElementById('telefono').value,
-                    domicilio: document.getElementById('domicilio').value,
-                    numero: document.getElementById('numero').value,
-                    localidad: document.getElementById('localidad').value,
-                    provincia: document.getElementById('provincia').value,
-                    codigoPostal: document.getElementById('codigoPostal').value
-                };
-                await uref.set(per, { merge: true });
-
-                // 2) Borrar anteriores
-                const oldSnap = await uref.collection('cargos').get();
-                const batch = db.batch();
-                oldSnap.forEach(s => batch.delete(s.ref));
-                await batch.commit();
-
-                // 3) Guardar nuevas pestañas
-                const panes = Array.from(document.querySelectorAll('.tab-pane[data-type]'));
-                for (let i = 0; i < panes.length; i++) {
-                    const pane = panes[i], type = pane.dataset.type, id = pane.id;
-                    const raw = pane.querySelector(`#${id}-label`).value.trim();
-                    const cargo = { type, label: raw, order: i };
-
-                    if (type === 'inspt') {
-                        cargo.funciones = pane.querySelector(`#${id}-funciones`).value;
-                        cargo.ingreso = pane.querySelector(`#${id}-ingreso`).value;
-                        cargo.nuevo = pane.querySelector(`#${id}-nuevo`).checked;
-                        cargo.licencia = pane.querySelector(`#${id}-licencia`).checked;
-                        cargo.horario = extractSchedule(id);
-                    } else if (type === 'reparticion') {
-                        cargo.reparticion = pane.querySelector(`#${id}-reparticion`).value;
-                        cargo.calle = pane.querySelector(`#${id}-calle`).value;
-                        cargo.numero = pane.querySelector(`#${id}-numero`).value;
-                        cargo.localidad = pane.querySelector(`#${id}-localidad`).value;
-                        cargo.provincia = pane.querySelector(`#${id}-provincia`).value;
-                        cargo.funciones = pane.querySelector(`#${id}-funciones`).value;
-                        cargo.ingreso = pane.querySelector(`#${id}-ingreso`).value;
-                        cargo.horario = extractSchedule(id);
-                    } else if (type === 'tarea') {
-                        cargo.empleador = pane.querySelector(`#${id}-empleador`).value;
-                        cargo.lugar = pane.querySelector(`#${id}-lugar`).value;
-                        cargo.funciones = pane.querySelector(`#${id}-funciones`).value;
-                        cargo.ingreso = pane.querySelector(`#${id}-ingreso`).value;
-                        cargo.horario = extractSchedule(id);
-                    } else if (type === 'pasividad') {
-                        cargo.causa = pane.querySelector(`#${id}-causa`).value;
-                        cargo.regimen = pane.querySelector(`#${id}-regimen`).value;
-                        cargo.desde = pane.querySelector(`#${id}-desde`).value;
-                        cargo.institucion = pane.querySelector(`#${id}-institucion`).value;
-                    }
-
-                    await uref.collection('cargos').add(cargo);
-                }
-
-                if (!silent) toastSuccess.show();
-                drawResumen();
-            } catch (e) {
-                document.getElementById('toastErrorMsg').textContent = e.message;
-                toastError.show();
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = orig;
-            }
-        }
-
-        function drawResumen() {
-            const labels = [], datos = [];
-            document.querySelectorAll('li.nav-item button.nav-link').forEach(btn => {
-                const target = btn.getAttribute('data-bs-target');
-                if (!target) return;
-                const scope = target.slice(1);
-                const text = document.getElementById(`${scope}-totalHoras`)?.textContent || '0h 0m';
-                labels.push(btn.textContent.trim());
-                datos.push(parseInt(text));
-            });
-            const ctx = document.getElementById('chartHoras').getContext('2d');
-            if (window.chartInstance) window.chartInstance.destroy();
-            window.chartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: { labels, datasets: [{ label: 'Horas semanales', data: datos }] },
-                options: { responsive: true, animation: { duration: 500 } }
-            });
-        }
-
-        function addDynamicTab(type, labelRaw = '', cargo) {
-            // ID único
-            const unique = Date.now() + '-' + Math.floor(Math.random() * 1000);
-            const id = `tab-${type}-${unique}`;
-
-            // Nav item
-            const li = document.createElement('li');
-            li.className = 'nav-item'; li.role = 'presentation';
-            const icon = `<i class="bi ${iconMap[type]}"></i> `;
-            li.innerHTML = `
-    <button class="nav-link" id="${id}-tab"
-            data-bs-toggle="tab" data-bs-target="#${id}"
-            type="button" role="tab">${icon}${labelRaw || placeholderMap[type]}${suffixMap[type]}</button>
-    <button type="button" class="btn-close ms-1" aria-label="Cerrar"></button>
-  `;
-            document.getElementById('cargosTab').insertBefore(li, document.querySelector('.ms-auto'));
-
-            // Panel
-            const pane = document.createElement('div');
-            pane.className = 'tab-pane fade needs-validation';
-            pane.id = id; pane.role = 'tabpanel';
-            pane.dataset.type = type;
-            pane.innerHTML = getFormHTML(type, id);
-            document.getElementById('cargosTabContent').appendChild(pane);
-
-            // Mostrar + validar
-            new bootstrap.Tab(li.querySelector('.nav-link')).show();
-            applyValidation(pane);
-
-            // Poblar si viene de Firestore
-            if (cargo) {
-                populateDynamic(id, cargo);
-                calculateHours(id);
-            }
-
-            // Cerrar pestaña
-            li.querySelector('.btn-close').addEventListener('click', () => {
-                if (confirm(`Eliminar pestaña “${labelRaw || placeholderMap[type]}”?`)) {
-                    pane.remove(); li.remove(); drawResumen();
-                }
-            });
-
-            // Label editable
-            const inp = pane.querySelector(`#${id}-label`),
-                tabBtn = li.querySelector('.nav-link');
-            inp.value = cargo?.label || '';
-            inp.addEventListener('input', () => {
-                const txt = inp.value.trim() || placeholderMap[type];
-                tabBtn.innerHTML = icon + txt + suffixMap[type];
-            });
-        }
-
-        function getFormHTML(type, p) {
-            let h = `<form id="form-${p}" class="needs-validation" novalidate>`;
-            h += `
+    function getFormHTML(type, p) {
+      let h = `<form id="form-${p}" class="needs-validation" novalidate>`;
+      h += `
         <div class="d-flex justify-content-between align-items-center mb-3">
           <label for="${p}-label" class="form-label"><i class="bi bi-tag"></i> Etiqueta</label>
           <button type="button" class="btn btn-outline-warning btn-sm" onclick="resetHorario('${p}')">
@@ -506,8 +506,8 @@
         </div>
         <input type="text" id="${p}-label" class="form-control mb-3" placeholder="Etiqueta">
       `;
-            if (type === 'inspt') {
-                h += `
+      if (type === 'inspt') {
+        h += `
           <div class="row g-3 mb-3">
             <div class="col-md-8">
               <label for="${p}-funciones" class="form-label"><i class="bi bi-gear-fill"></i> Funciones</label>
@@ -527,8 +527,8 @@
             <label class="form-check-label" for="${p}-licencia"><i class="bi bi-file-earmark-medical-fill"></i> Licencia</label>
           </div>
         `;
-            } else if (type === 'reparticion') {
-                h += `
+      } else if (type === 'reparticion') {
+        h += `
           <div class="row g-3 mb-3">
             <div class="col-md-6">
               <label for="${p}-reparticion" class="form-label"><i class="bi bi-building"></i> Repartición</label>
@@ -564,8 +564,8 @@
             </div>
           </div>
         `;
-            } else if (type === 'tarea') {
-                h += `
+      } else if (type === 'tarea') {
+        h += `
           <div class="row g-3 mb-3">
             <div class="col-md-6">
               <label for="${p}-empleador" class="form-label"><i class="bi bi-person-badge-fill"></i> Empleador</label>
@@ -587,8 +587,8 @@
             </div>
           </div>
         `;
-            } else if (type === 'pasividad') {
-                h += `
+      } else if (type === 'pasividad') {
+        h += `
           <div class="row g-3 mb-3">
             <div class="col-md-6">
               <label for="${p}-causa" class="form-label"><i class="bi bi-exclamation-diamond-fill"></i> Causa</label>
@@ -610,19 +610,18 @@
             </div>
           </div>
         `;
-            }
+      }
 
-            // Horario y totales (si no es pasividad)
-            if (type !== 'pasividad') {
-                h += `
+      if (type !== 'pasividad') {
+        h += `
           <div class="mb-3">
             <h5><i class="bi bi-clock-fill"></i> Horario</h5>
             <table class="table table-bordered schedule-table">
               <thead>
                 <tr>
-                  ${['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'].map(d => `
+                  ${['lunes','martes','miercoles','jueves','viernes','sabado'].map(d => `
                     <th class="text-capitalize">
-                      ${d.slice(0, 3)}<br>
+                      ${d.slice(0,3)}<br>
                       <button type="button" class="btn btn-sm btn-outline-success add-day" data-day="${d}" data-scope="${p}" data-bs-toggle="tooltip" title="Agregar franja">
                         <i class="bi bi-plus-circle"></i>
                       </button>
@@ -631,7 +630,7 @@
                 </tr>
               </thead>
               <tbody><tr>
-                ${['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'].map(d => `
+                ${['lunes','martes','miercoles','jueves','viernes','sabado'].map(d => `
                   <td class="schedule-day" data-day="${d}" data-scope="${p}"></td>
                 `).join('')}
               </tr></tbody>
@@ -640,171 +639,170 @@
           <div class="mb-3"><strong><i class="bi bi-clock-history"></i> Total horas:</strong> <span id="${p}-totalHoras">0h 0m</span></div>
           <div class="mb-3"><strong><i class="bi bi-hourglass-split"></i> Total horas Cátedra:</strong> <span id="${p}-totalHorasCat">0h 0m</span></div>
         `;
-            }
+      }
 
-            h += `</form>`;
-            return h;
-        }
+      h += `</form>`;
+      return h;
+    }
 
-        function populateDynamic(p, c) {
-            const type = c.type;
-            if (type === 'inspt') {
-                document.getElementById(`${p}-funciones`).value = c.funciones || '';
-                document.getElementById(`${p}-ingreso`).value = c.ingreso || defaultIngreso();
-                document.getElementById(`${p}-nuevo`).checked = !!c.nuevo;
-                document.getElementById(`${p}-licencia`).checked = !!c.licencia;
-            } else if (type === 'reparticion') {
-                document.getElementById(`${p}-reparticion`).value = c.reparticion || '';
-                document.getElementById(`${p}-calle`).value = c.calle || '';
-                document.getElementById(`${p}-numero`).value = c.numero || '';
-                document.getElementById(`${p}-localidad`).value = c.localidad || '';
-                document.getElementById(`${p}-provincia`).value = c.provincia || '';
-                document.getElementById(`${p}-funciones`).value = c.funciones || '';
-                document.getElementById(`${p}-ingreso`).value = c.ingreso || defaultIngreso();
-            } else if (type === 'tarea') {
-                document.getElementById(`${p}-empleador`).value = c.empleador || '';
-                document.getElementById(`${p}-lugar`).value = c.lugar || '';
-                document.getElementById(`${p}-funciones`).value = c.funciones || '';
-                document.getElementById(`${p}-ingreso`).value = c.ingreso || defaultIngreso();
-            } else if (type === 'pasividad') {
-                document.getElementById(`${p}-causa`).value = c.causa || '';
-                document.getElementById(`${p}-regimen`).value = c.regimen || '';
-                document.getElementById(`${p}-desde`).value = c.desde || defaultIngreso();
-                document.getElementById(`${p}-institucion`).value = c.institucion || '';
-            }
-            if (Array.isArray(c.horario)) {
-                setSchedule(p, c.horario);
-            }
-        }
+    function populateDynamic(p, c) {
+      const type = c.type;
+      if (type === 'inspt') {
+        document.getElementById(`${p}-funciones`).value = c.funciones || '';
+        document.getElementById(`${p}-ingreso`).value = c.ingreso || defaultIngreso();
+        document.getElementById(`${p}-nuevo`).checked = !!c.nuevo;
+        document.getElementById(`${p}-licencia`).checked = !!c.licencia;
+      } else if (type === 'reparticion') {
+        document.getElementById(`${p}-reparticion`).value = c.reparticion || '';
+        document.getElementById(`${p}-calle`).value = c.calle || '';
+        document.getElementById(`${p}-numero`).value = c.numero || '';
+        document.getElementById(`${p}-localidad`).value = c.localidad || '';
+        document.getElementById(`${p}-provincia`).value = c.provincia || '';
+        document.getElementById(`${p}-funciones`).value = c.funciones || '';
+        document.getElementById(`${p}-ingreso`).value = c.ingreso || defaultIngreso();
+      } else if (type === 'tarea') {
+        document.getElementById(`${p}-empleador`).value = c.empleador || '';
+        document.getElementById(`${p}-lugar`).value = c.lugar || '';
+        document.getElementById(`${p}-funciones`).value = c.funciones || '';
+        document.getElementById(`${p}-ingreso`).value = c.ingreso || defaultIngreso();
+      } else if (type === 'pasividad') {
+        document.getElementById(`${p}-causa`).value = c.causa || '';
+        document.getElementById(`${p}-regimen`).value = c.regimen || '';
+        document.getElementById(`${p}-desde`).value = c.desde || defaultIngreso();
+        document.getElementById(`${p}-institucion`).value = c.institucion || '';
+      }
+      if (Array.isArray(c.horario)) {
+        setSchedule(p, c.horario);
+      }
+    }
 
-        document.addEventListener('click', e => {
-            if (e.target.closest('.add-day')) {
-                const btn = e.target.closest('.add-day');
-                addDayTemplate(btn.dataset.day, btn.dataset.scope);
-                calculateHours(btn.dataset.scope);
-            }
-            if (e.target.closest('.remove-slot')) {
-                const btn = e.target.closest('.remove-slot');
-                const cell = btn.closest('.schedule-day');
-                const scope = cell.dataset.scope;
-                btn.closest('.slot-row').remove();
-                calculateHours(scope);
-            }
+    document.addEventListener('click', e => {
+      if (e.target.closest('.add-day')) {
+        const btn = e.target.closest('.add-day');
+        addDayTemplate(btn.dataset.day, btn.dataset.scope);
+        calculateHours(btn.dataset.scope);
+      }
+      if (e.target.closest('.remove-slot')) {
+        const btn = e.target.closest('.remove-slot');
+        const cell = btn.closest('.schedule-day');
+        const scope = cell.dataset.scope;
+        btn.closest('.slot-row').remove();
+        calculateHours(scope);
+      }
+    });
+    document.addEventListener('dragover', e => {
+      if (e.target.closest('.schedule-day')) e.preventDefault();
+    });
+    document.addEventListener('drop', e => {
+      const cell = e.target.closest('.schedule-day');
+      const dragging = document.querySelector('.dragging');
+      if (cell && dragging) {
+        cell.appendChild(dragging);
+        calculateHours(cell.dataset.scope);
+      }
+    });
+    document.addEventListener('input', e => {
+      if (e.target.matches('.from-slot, .to-slot')) {
+        const cell = e.target.closest('.schedule-day');
+        calculateHours(cell.dataset.scope);
+      }
+    });
+
+    function addDayTemplate(day, scope = '') {
+      const selector = `.schedule-day[data-day="${day}"][data-scope="${scope}"]`;
+      const cell = document.querySelector(selector);
+      if (!cell) return;
+      const row = document.createElement('div');
+      row.className = 'slot-row d-flex align-items-center flex-wrap gap-2 justify-content-center';
+      row.setAttribute('draggable', 'true');
+      row.innerHTML = `
+        <div class="d-flex align-items-center">
+          <label class="me-1 mb-0">Desde</label>
+          <input type="time" class="form-control form-control-sm me-2 from-slot" style="width:110px">
+        </div>
+        <div class="d-flex align-items-center">
+          <label class="me-1 mb-0">Hasta</label>
+          <input type="time" class="form-control form-control-sm me-2 to-slot" style="width:110px">
+        </div>
+        <button class="btn btn-sm btn-outline-danger remove-slot" data-bs-toggle="tooltip" title="Eliminar franja"><i class="bi bi-trash"></i></button>
+      `;
+      row.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', ''); row.classList.add('dragging'); });
+      row.addEventListener('dragend', () => row.classList.remove('dragging'));
+      cell.appendChild(row);
+    }
+
+    function extractSchedule(scope = '') {
+      const dias = ['lunes','martes','miercoles','jueves','viernes','sabado'];
+      const out = [];
+      dias.forEach(day => {
+        const cell = document.querySelector(`.schedule-day[data-day="${day}"][data-scope="${scope}"]`);
+        if (!cell) return;
+        const slots = [];
+        cell.querySelectorAll('.slot-row').forEach(r => {
+          const f = r.querySelector('.from-slot').value, t = r.querySelector('.to-slot').value;
+          if (f && t) slots.push({ from: f, to: t });
         });
-        document.addEventListener('dragover', e => {
-            if (e.target.closest('.schedule-day')) e.preventDefault();
+        if (slots.length) out.push({ day, slots });
+      });
+      return out;
+    }
+
+    function calculateHours(scope = '') {
+      const rows = document.querySelectorAll(`.schedule-day[data-scope="${scope}"] .slot-row`);
+      let total = 0;
+      rows.forEach(r => {
+        const f = r.querySelector('.from-slot').value, t = r.querySelector('.to-slot').value;
+        if (f && t) {
+          const [fh, fm] = f.split(':').map(Number), [th, tm] = t.split(':').map(Number);
+          const diff = (th * 60 + tm) - (fh * 60 + fm);
+          if (diff > 0) total += diff;
+        }
+      });
+      const h = Math.floor(total/60), m = total % 60;
+      document.getElementById(`${scope}-totalHoras`).textContent = `${h}h ${m}m`;
+      const cat = total/40, cH = Math.floor(cat), cM = Math.round((cat-cH)*60);
+      const elC = document.getElementById(`${scope}-totalHorasCat`);
+      if (elC) elC.textContent = `${cH}h ${cM}m`;
+    }
+
+    function resetHorario(scope) {
+      document.querySelectorAll(`.schedule-day[data-scope="${scope}"] .slot-row`).forEach(r => r.remove());
+      calculateHours(scope);
+    }
+
+    function setSchedule(scope, horario) {
+      if (!Array.isArray(horario)) return;
+      horario.forEach(entry => {
+        entry.slots.forEach(({ from, to }) => {
+          addDayTemplate(entry.day, scope);
+          const cells = document.querySelectorAll(`.schedule-day[data-day="${entry.day}"][data-scope="${scope}"]`);
+          const last = cells[cells.length-1];
+          const row = last.querySelector('.slot-row:last-child');
+          if (row) {
+            row.querySelector('.from-slot').value = from;
+            row.querySelector('.to-slot').value = to;
+          }
         });
-        document.addEventListener('drop', e => {
-            const cell = e.target.closest('.schedule-day');
-            const dragging = document.querySelector('.dragging');
-            if (cell && dragging) {
-                cell.appendChild(dragging);
-                calculateHours(cell.dataset.scope);
-            }
-        });
-        document.addEventListener('input', e => {
-            if (e.target.matches('.from-slot, .to-slot')) {
-                const cell = e.target.closest('.schedule-day');
-                calculateHours(cell.dataset.scope);
-            }
-        });
+      });
+    }
 
-        function addDayTemplate(day, scope = '') {
-            const selector = `.schedule-day[data-day="${day}"][data-scope="${scope}"]`;
-            const cell = document.querySelector(selector);
-            if (!cell) return;
-            const row = document.createElement('div');
-            row.className = 'slot-row d-flex align-items-center flex-wrap gap-2 justify-content-center';
-            row.setAttribute('draggable', 'true');
-            row.innerHTML = `
-      <div class="d-flex align-items-center">
-        <label class="me-1 mb-0">Desde</label>
-        <input type="time" class="form-control form-control-sm me-2 from-slot" style="width:110px">
-      </div>
-      <div class="d-flex align-items-center">
-        <label class="me-1 mb-0">Hasta</label>
-        <input type="time" class="form-control form-control-sm me-2 to-slot" style="width:110px">
-      </div>
-      <button class="btn btn-sm btn-outline-danger remove-slot" data-bs-toggle="tooltip" title="Eliminar franja"><i class="bi bi-trash"></i></button>
-    `;
-            row.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', ''); row.classList.add('dragging'); });
-            row.addEventListener('dragend', () => row.classList.remove('dragging'));
-            cell.appendChild(row);
-        }
+    function fillPersonal(d) {
+      const map = {
+        legajo: 'legajo', nombre: 'nombre', apellido: 'apellido',
+        dni: 'dni', fechaNacimiento: 'fechaNacimiento',
+        email: 'emailPersonal', telefono: 'telefono',
+        domicilio: 'domicilio', numero: 'numero',
+        localidad: 'localidad', provincia: 'provincia',
+        codigoPostal: 'codigoPostal'
+      };
+      Object.entries(map).forEach(([k, id]) => {
+        if (d[k] !== undefined) document.getElementById(id).value = d[k];
+      });
+    }
 
-        function extractSchedule(scope = '') {
-            const dias = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
-            const out = [];
-            dias.forEach(day => {
-                const cell = document.querySelector(`.schedule-day[data-day="${day}"][data-scope="${scope}"]`);
-                if (!cell) return;
-                const slots = [];
-                cell.querySelectorAll('.slot-row').forEach(r => {
-                    const f = r.querySelector('.from-slot').value, t = r.querySelector('.to-slot').value;
-                    if (f && t) slots.push({ from: f, to: t });
-                });
-                if (slots.length) out.push({ day, slots });
-            });
-            return out;
-        }
-
-        function calculateHours(scope = '') {
-            const rows = document.querySelectorAll(`.schedule-day[data-scope="${scope}"] .slot-row`);
-            let total = 0;
-            rows.forEach(r => {
-                const f = r.querySelector('.from-slot').value, t = r.querySelector('.to-slot').value;
-                if (f && t) {
-                    const [fh, fm] = f.split(':').map(Number), [th, tm] = t.split(':').map(Number);
-                    const diff = (th * 60 + tm) - (fh * 60 + fm);
-                    if (diff > 0) total += diff;
-                }
-            });
-            const h = Math.floor(total / 60), m = total % 60;
-            document.getElementById(`${scope}-totalHoras`).textContent = `${h}h ${m}m`;
-            const cat = total / 40, cH = Math.floor(cat), cM = Math.round((cat - cH) * 60);
-            const elC = document.getElementById(`${scope}-totalHorasCat`);
-            if (elC) elC.textContent = `${cH}h ${cM}m`;
-        }
-
-        function resetHorario(scope) {
-            document.querySelectorAll(`.schedule-day[data-scope="${scope}"] .slot-row`).forEach(r => r.remove());
-            calculateHours(scope);
-        }
-
-        function setSchedule(scope, horario) {
-            if (!Array.isArray(horario)) return;
-            horario.forEach(entry => {
-                entry.slots.forEach(({ from, to }) => {
-                    addDayTemplate(entry.day, scope);
-                    const cells = document.querySelectorAll(`.schedule-day[data-day="${entry.day}"][data-scope="${scope}"]`);
-                    const last = cells[cells.length - 1];
-                    const row = last.querySelector('.slot-row:last-child');
-                    if (row) {
-                        row.querySelector('.from-slot').value = from;
-                        row.querySelector('.to-slot').value = to;
-                    }
-                });
-            });
-        }
-
-        function fillPersonal(d) {
-            const map = {
-                legajo: 'legajo', nombre: 'nombre', apellido: 'apellido',
-                dni: 'dni', fechaNacimiento: 'fechaNacimiento',
-                email: 'emailPersonal', telefono: 'telefono',
-                domicilio: 'domicilio', numero: 'numero',
-                localidad: 'localidad', provincia: 'provincia',
-                codigoPostal: 'codigoPostal'
-            };
-            Object.entries(map).forEach(([k, id]) => {
-                if (d[k] !== undefined) document.getElementById(id).value = d[k];
-            });
-        }
-
-        function defaultIngreso() {
-            return new Date().toISOString().substring(0, 10);
-        }
-    </script>
+    function defaultIngreso() {
+      return new Date().toISOString().substring(0, 10);
+    }
+  </script>
 </body>
-
 </html>

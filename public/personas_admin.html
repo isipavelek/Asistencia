@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Administrar Usuarios</title>
 
-  <!-- Bootstrap -->
+  <!-- Bootstrap CSS & JS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -15,100 +15,131 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <style>
-    body { background-color: #f8f9fa; padding: 2rem; }
+    body { background-color: #f8f9fa; padding: 2rem; min-height: 100vh; }
     .container { max-width: 1000px; }
     th { cursor: pointer; }
+
+    /* Overlay spinner */
+    #loadingOverlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255,255,255,0.8);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
   </style>
 </head>
 <body>
 
-<div class="container">
-  <h3 class="mb-4">👥 Administración de Usuarios</h3>
-
-  <div class="d-flex justify-content-between mb-3">
-    <input id="filtro" class="form-control w-50" placeholder="🔍 Buscar por nombre, apellido, legajo o sector" />
+  <!-- Spinner overlay mientras Firebase carga -->
+  <div id="loadingOverlay">
+    <div class="spinner-border text-primary mb-3" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+    <div>Cargando datos de Firebase...</div>
   </div>
 
-  <div class="table-responsive">
-    <table class="table table-bordered table-striped" id="tablaUsuarios">
-      <thead class="table-dark">
-        <tr>
-          <th onclick="ordenar('legajo')">Legajo</th>
-          <th onclick="ordenar('apellido')">Apellido</th>
-          <th>Nombre</th>
-          <th>Sector</th>
-          <th>Rol</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody id="tbodyUsuarios"></tbody>
-    </table>
-  </div>
-</div>
-<!-- Modal -->
-<div class="modal fade" id="modalUsuario" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Editar Usuario</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+  <!-- Contenido principal, oculto hasta que Firebase esté listo -->
+  <div id="appContent" class="d-none">
+
+    <div class="container">
+      <h3 class="mb-4">👥 Administración de Usuarios</h3>
+
+      <div class="d-flex justify-content-between mb-3">
+        <input id="filtro" class="form-control w-50" placeholder="🔍 Buscar por nombre, apellido, legajo o sector" />
+         <div class="col-md-auto d-grid">
+          <a href="menu.html" class="btn btn-outline-secondary">🏠 Menú Principal</a>
         </div>
-        <div class="modal-body">
-          <input type="hidden" id="modalUID">
-  
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Legajo</label>
-              <input type="text" id="modalLegajo" class="form-control">
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped" id="tablaUsuarios">
+          <thead class="table-dark">
+            <tr>
+              <th onclick="ordenar('legajo')">Legajo</th>
+              <th onclick="ordenar('apellido')">Apellido</th>
+              <th>Nombre</th>
+              <th>Sector</th>
+              <th>Rol</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyUsuarios"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="modalUsuario" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Editar Usuario</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="modalUID">
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Legajo</label>
+                <input type="text" id="modalLegajo" class="form-control">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Rol</label>
+                <select id="modalRol" class="form-select">
+                  <option value="usuario">Usuario</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
             </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Rol</label>
-              <select id="modalRol" class="form-select">
-                <option value="usuario">Usuario</option>
-                <option value="admin">Admin</option>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Apellido</label>
+                <input type="text" id="modalApellido" class="form-control">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Nombre</label>
+                <input type="text" id="modalNombre" class="form-control">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Sector</label>
+              <select id="modalSector" class="form-select" required>
+                <option value="">Seleccionar sector</option>
+                <option value="Dirección">Dirección</option>
+                <option value="Vicedirección">Vicedirección</option>
+                <option value="Secretaría">Secretaría</option>
+                <option value="Preceptoria">Preceptoria</option>
+                <option value="Recursos Humanos">Recursos Humanos</option>
+                <option value="Servicios Generales">Servicios Generales</option>
+                <option value="Docente">Docente</option>
+                <option value="Gabinete">Gabinete</option>
+                <option value="Otros">Otros</option>
               </select>
             </div>
+
+            <h5 class="mt-4">🕒 Horarios por día</h5>
+            <div id="horariosContainer"></div>
           </div>
-  
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Apellido</label>
-              <input type="text" id="modalApellido" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Nombre</label>
-              <input type="text" id="modalNombre" class="form-control">
-            </div>
+
+          <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button class="btn btn-primary" onclick="guardarUsuario()">Guardar</button>
           </div>
-  
-          <div class="mb-3">
-            <label class="form-label">Sector</label>
-            <select id="modalSector" class="form-select" required>
-              <option value="">Seleccionar sector</option>
-              <option value="Dirección">Dirección</option>
-              <option value="Vicedirección">Vicedirección</option>
-              <option value="Secretaría">Secretaría</option>
-              <option value="Preceptoria">Preceptoria</option>
-              <option value="Recursos Humanos">Recursos Humanos</option>
-              <option value="Servicios Generales">Servicios Generales</option>
-              <option value="Docente">Docente</option>
-              <option value="Gabinete">Gabinete</option>
-              <option value="Otros">Otros</option>
-            </select>
-          </div>
-  
-          <h5 class="mt-4">🕒 Horarios por día</h5>
-          <div id="horariosContainer"></div>
-        </div>
-  
-        <div class="modal-footer">
-          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button class="btn btn-primary" onclick="guardarUsuario()">Guardar</button>
         </div>
       </div>
     </div>
-  </div>
+
+  </div><!-- /#appContent -->
+
   <script>
+    // Configuración de Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyC4v9h8eXWRBnzTD-VDDludynd5nzOv4xc",
       authDomain: "est-utn-c0988.firebaseapp.com",
@@ -117,72 +148,82 @@
       messagingSenderId: "788767016042",
       appId: "1:788767016042:web:8a480a74e3b1ef0de97613"
     };
-  
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
-  
+
     let usuarios = [];
     let ordenActual = { campo: 'legajo', asc: true };
-  
+
     auth.onAuthStateChanged(async user => {
-      if (!user) window.location.href = "login.html";
+      if (!user) {
+        window.location.href = "login.html";
+        return;
+      }
       const doc = await db.collection("usuarios").doc(user.uid).get();
       if (!doc.exists || doc.data().rol !== "admin") {
         alert("❌ Acceso no autorizado");
         window.location.href = "menu.html";
+        return;
       }
-      cargarUsuarios();
+
+      // Cargo usuarios y luego muestro la interfaz
+      await cargarUsuarios();
+      document.getElementById("loadingOverlay").classList.add("d-none");
+      document.getElementById("appContent").classList.remove("d-none");
     });
-  
-    function cargarUsuarios() {
-      db.collection("usuarios").get().then(snapshot => {
-        usuarios = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
-        mostrarUsuarios();
-      });
+
+    async function cargarUsuarios() {
+      const snapshot = await db.collection("usuarios").get();
+      usuarios = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
+      mostrarUsuarios();
     }
-  
+
     function mostrarUsuarios() {
       const filtro = document.getElementById("filtro").value.toLowerCase();
       const tbody = document.getElementById("tbodyUsuarios");
       tbody.innerHTML = "";
-  
+
       let lista = [...usuarios];
-  
       lista.sort((a, b) => {
-        let valA = a[ordenActual.campo]?.toLowerCase?.() || a[ordenActual.campo];
-        let valB = b[ordenActual.campo]?.toLowerCase?.() || b[ordenActual.campo];
-        return ordenActual.asc ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
+        let A = a[ordenActual.campo]?.toString().toLowerCase() || '';
+        let B = b[ordenActual.campo]?.toString().toLowerCase() || '';
+        return ordenActual.asc ? (A > B ? 1 : -1) : (A < B ? 1 : -1);
       });
-  
-      lista.filter(u =>
-        `${u.legajo} ${u.nombre} ${u.apellido} ${u.sector}`.toLowerCase().includes(filtro)
-      ).forEach(u => {
-        const fila = `
-          <tr>
-            <td>${u.legajo}</td>
-            <td>${u.apellido}</td>
-            <td>${u.nombre}</td>
-            <td>${u.sector}</td>
-            <td>${u.rol || "usuario"}</td>
-            <td>
-              <button class="btn btn-sm btn-primary me-1" onclick="editarUsuario('${u.uid}')">✏️</button>
-              <button class="btn btn-sm btn-danger" onclick="eliminarUsuario('${u.uid}')">🗑️</button>
-            </td>
-          </tr>`;
-        tbody.innerHTML += fila;
-      });
+
+      lista
+        .filter(u => `${u.legajo} ${u.nombre} ${u.apellido} ${u.sector}`
+          .toLowerCase()
+          .includes(filtro))
+        .forEach(u => {
+          tbody.innerHTML += `
+            <tr>
+              <td>${u.legajo}</td>
+              <td>${u.apellido}</td>
+              <td>${u.nombre}</td>
+              <td>${u.sector}</td>
+              <td>${u.rol || "usuario"}</td>
+              <td>
+                <button class="btn btn-sm btn-primary me-1" onclick="editarUsuario('${u.uid}')">✏️</button>
+                <button class="btn btn-sm btn-danger" onclick="eliminarUsuario('${u.uid}')">🗑️</button>
+              </td>
+            </tr>`;
+        });
     }
-  
+
     function ordenar(campo) {
-      ordenActual = ordenActual.campo === campo ? { campo, asc: !ordenActual.asc } : { campo, asc: true };
+      if (ordenActual.campo === campo) {
+        ordenActual.asc = !ordenActual.asc;
+      } else {
+        ordenActual = { campo, asc: true };
+      }
       mostrarUsuarios();
     }
-  
+
     function generarCamposHorarios(horarios = {}) {
       const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
-      const contenedor = document.getElementById("horariosContainer");
-      contenedor.innerHTML = dias.map(dia => `
+      const cont = document.getElementById("horariosContainer");
+      cont.innerHTML = dias.map(dia => `
         <div class="row mb-2">
           <div class="col-md-4"><strong>${dia}</strong></div>
           <div class="col-md-4">
@@ -191,10 +232,9 @@
           <div class="col-md-4">
             <input type="time" class="form-control" id="horaSalida_${dia}" value="${horarios[dia]?.salida || ''}" />
           </div>
-        </div>
-      `).join('');
+        </div>`).join('');
     }
-  
+
     function editarUsuario(uid) {
       const u = usuarios.find(x => x.uid === uid);
       if (!u) return;
@@ -207,7 +247,7 @@
       generarCamposHorarios(u.horarios || {});
       new bootstrap.Modal(document.getElementById("modalUsuario")).show();
     }
-  
+
     function abrirModalNueva() {
       document.getElementById("modalUID").value = "";
       document.getElementById("modalLegajo").value = "";
@@ -218,47 +258,42 @@
       generarCamposHorarios();
       new bootstrap.Modal(document.getElementById("modalUsuario")).show();
     }
-  
+
     function guardarUsuario() {
-      const uid = document.getElementById("modalUID").value;
-      const legajo = document.getElementById("modalLegajo").value.trim();
+      const uid      = document.getElementById("modalUID").value;
+      const legajo   = document.getElementById("modalLegajo").value.trim();
       const apellido = document.getElementById("modalApellido").value.trim();
-      const nombre = document.getElementById("modalNombre").value.trim();
-      const sector = document.getElementById("modalSector").value.trim();
-      const rol = document.getElementById("modalRol").value;
-  
+      const nombre   = document.getElementById("modalNombre").value.trim();
+      const sector   = document.getElementById("modalSector").value.trim();
+      const rol      = document.getElementById("modalRol").value;
+
       const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
       const horarios = {};
       dias.forEach(dia => {
-        const entrada = document.getElementById(`horaEntrada_${dia}`).value;
-        const salida = document.getElementById(`horaSalida_${dia}`).value;
-        if (entrada && salida) horarios[dia] = { entrada, salida };
+        const ent = document.getElementById(`horaEntrada_${dia}`).value;
+        const sal = document.getElementById(`horaSalida_${dia}`).value;
+        if (ent && sal) horarios[dia] = { entrada: ent, salida: sal };
       });
-  
+
       const datos = { legajo, apellido, nombre, sector, rol, horarios };
-  
-      if (uid) {
-        db.collection("usuarios").doc(uid).set(datos, { merge: true }).then(() => {
-          bootstrap.Modal.getInstance(document.getElementById("modalUsuario")).hide();
-          cargarUsuarios();
-        });
-      } else {
-        db.collection("usuarios").add(datos).then(() => {
-          bootstrap.Modal.getInstance(document.getElementById("modalUsuario")).hide();
-          cargarUsuarios();
-        });
-      }
+
+      const ref = uid
+        ? db.collection("usuarios").doc(uid).set(datos, { merge: true })
+        : db.collection("usuarios").add(datos);
+
+      ref.then(() => {
+        bootstrap.Modal.getInstance(document.getElementById("modalUsuario")).hide();
+        cargarUsuarios();
+      });
     }
-  
+
     function eliminarUsuario(uid) {
       if (confirm("¿Eliminar este usuario?")) {
         db.collection("usuarios").doc(uid).delete().then(cargarUsuarios);
       }
     }
-  
+
     document.getElementById("filtro").addEventListener("input", mostrarUsuarios);
   </script>
-  
-  </body>
-  </html>
-    
+</body>
+</html>

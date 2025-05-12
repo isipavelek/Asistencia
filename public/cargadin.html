@@ -1,0 +1,63 @@
+auth.onAuthStateChanged(user => {
+  if (!user) return window.location.href = 'login.html';
+  // 1) Cargar datos personales...
+  db.collection('usuarios').doc(user.uid).get()
+    .then(doc => {
+      if (!doc.exists) return;
+      const d = doc.data();
+      /* … aquí asignas los campos personales … */
+    })
+    .then(() => {
+      // 2) Ahora traemos TODOS los cargos
+      return db.collection('usuarios')
+               .doc(user.uid)
+               .collection('cargos')
+               .orderBy('order', 'asc')
+               .get();
+    })
+    .then(snapshot => {
+      snapshot.forEach(doc => {
+        const c = doc.data();
+        // Suponiendo que en tu HTML de impresión tienes un contenedor
+        // para cada tipo, por ejemplo:
+        //   <div id="impr-cargo-inspt"></div>
+        //   <div id="impr-cargo-reparticion"></div>
+        //   etc.
+        let target;
+        switch (c.type) {
+          case 'inspt':
+            target = document.getElementById('impr-cargo-inspt');
+            break;
+          case 'reparticion':
+            target = document.getElementById('impr-cargo-reparticion');
+            break;
+          case 'tarea':
+            target = document.getElementById('impr-cargo-tarea');
+            break;
+          case 'pasividad':
+            target = document.getElementById('impr-cargo-pasividad');
+            break;
+        }
+        if (!target) return;
+        // Genera el HTML con los datos de c:
+        const html = `
+          <h4>${c.label || (c.type === 'inspt' ? 'Cargo INSPT' : '')}</h4>
+          <p><strong>Funciones:</strong> ${c.funciones || '-'}</p>
+          <p><strong>Ingreso:</strong> ${c.ingreso || '-'}</p>
+          ${c.horario ? `<p><strong>Horario:</strong> ${c.horario.map(e =>
+            `${e.day}: ${e.slots.map(s => s.from + '–' + s.to).join(', ')}`
+          ).join('; ')}</p>` : ''}
+          ${c.nuevo   != null ? `<p><strong>Cargo nuevo:</strong> ${c.nuevo ? 'Sí' : 'No'}</p>` : ''}
+          ${c.licencia!= null ? `<p><strong>Licencia:</strong> ${c.licencia ? 'Sí' : 'No'}</p>` : ''}
+          ${c.reparticion ? `<p><strong>Repartición:</strong> ${c.reparticion}</p>` : ''}
+          ${c.causa       ? `<p><strong>Causa pasividad:</strong> ${c.causa}</p>` : ''}
+          ${c.regimen     ? `<p><strong>Régimen:</strong> ${c.regimen}</p>` : ''}
+          ${c.desde       ? `<p><strong>Desde:</strong> ${c.desde}</p>` : ''}
+          ${c.institucion ? `<p><strong>Institución:</strong> ${c.institucion}</p>` : ''}
+          <hr>
+        `;
+        target.insertAdjacentHTML('beforeend', html);
+      });
+    })
+    .catch(err => console.error('Error al cargar cargos:', err));
+});

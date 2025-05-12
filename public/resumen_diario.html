@@ -2,188 +2,247 @@
 <html lang="es">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Resumen Diario de Asistencias</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <style>
-        body {
-            background-color: #f8f9fa;
-            padding: 2rem;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Resumen Diario de Asistencias</title>
 
-        .container {
-            max-width: 1200px;
-        }
+  <!-- Bootstrap CSS & JS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-        .badge-danger {
-            background-color: #dc3545;
-        }
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-        .badge-warning {
-            background-color: #ffc107;
-        }
+  <!-- XLSX -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-        .badge-success {
-            background-color: #28a745;
-        }
-    </style>
+  <style>
+    body {
+      background-color: #f8f9fa;
+      padding: 2rem;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+    }
+
+    .badge-danger {
+      background-color: #dc3545;
+    }
+
+    .badge-warning {
+      background-color: #ffc107;
+    }
+
+    .badge-success {
+      background-color: #28a745;
+    }
+
+    /* Overlay spinner */
+    #loadingOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255,255,255,0.8);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+  </style>
 </head>
 
 <body>
-    <div class="container">
-        <h3 class="mb-4" id="tituloResumen">📊 Resumen Diario de Asistencias</h3>
-        <div class="mb-3 d-flex align-items-end gap-2">
-            <input type="date" id="fechaSeleccionada" class="form-control w-auto">
-            <button class="btn btn-primary" onclick="cargarResumen()">🔄 Ver resumen</button>
-            <button class="btn btn-success" id="btnExportar" onclick="exportarExcel()">📁 Exportar a Excel</button>
-        </div>
 
-        <div class="table-responsive">
-            <table class="table table-bordered table-hover" id="tablaResumen">
-                <thead class="table-dark">
-                    <tr>
-                        <th class="th-legajo">Legajo</th>
-                        <th class="th-apellido">Apellido</th>
-                        <th class="th-nombre">Nombre</th>
-                        <th class="th-sector">Sector</th>
-                        <th>Esperado</th>
-                        <th>Ingreso</th>
-                        <th>Egreso</th>
-                        <th>Horas</th>
-                        <th>Estado</th>
-                    </tr>
-                </thead>
-                <tbody id="tbodyResumen"></tbody>
-            </table>
-        </div>
+  <!-- Spinner overlay mientras Firebase y datos cargan -->
+  <div id="loadingOverlay">
+    <div class="spinner-border text-primary mb-3" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+    <div>Cargando datos de Firebase...</div>
+  </div>
+
+  <!-- Contenido principal, oculto hasta que todo esté listo -->
+  <div id="appContent" class="d-none">
+    <div class="container">
+      <h3 class="mb-4" id="tituloResumen">📊 Resumen Diario de Asistencias</h3>
+      <div class="mb-3 d-flex align-items-end gap-2">
+        <input type="date" id="fechaSeleccionada" class="form-control w-auto">
+        <button class="btn btn-primary" onclick="cargarResumen()">🔄 Ver resumen</button>
+        <button class="btn btn-success" id="btnExportar" onclick="exportarExcel()">📁 Exportar a Excel</button>
+     <div class="col-md-auto d-grid">
+          <a href="menu.html" class="btn btn-outline-secondary">🏠 Menú Principal</a>
+        </div>  
     </div>
 
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyC4v9h8eXWRBnzTD-VDDludynd5nzOv4xc",
-            authDomain: "est-utn-c0988.firebaseapp.com",
-            projectId: "est-utn-c0988",
-            storageBucket: "est-utn-c0988.firebasestorage.app",
-            messagingSenderId: "788767016042",
-            appId: "1:788767016042:web:8a480a74e3b1ef0de97613"
-        };
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover" id="tablaResumen">
+          <thead class="table-dark">
+            <tr>
+              <th class="th-legajo">Legajo</th>
+              <th class="th-apellido">Apellido</th>
+              <th class="th-nombre">Nombre</th>
+              <th class="th-sector">Sector</th>
+              <th>Esperado</th>
+              <th>Ingreso</th>
+              <th>Egreso</th>
+              <th>Horas</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyResumen"></tbody>
+        </table>
+      </div>
+    </div>
+  </div><!-- /#appContent -->
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
+  <script>
+    // Configuración de Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyC4v9h8eXWRBnzTD-VDDludynd5nzOv4xc",
+      authDomain: "est-utn-c0988.firebaseapp.com",
+      projectId: "est-utn-c0988",
+      storageBucket: "est-utn-c0988.firebasestorage.app",
+      messagingSenderId: "788767016042",
+      appId: "1:788767016042:web:8a480a74e3b1ef0de97613"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
 
-        let usuarioActual = null;
+    let usuarioActual = null;
 
-        auth.onAuthStateChanged(async user => {
-            if (!user) window.location.href = "login.html";
-            const doc = await db.collection("usuarios").doc(user.uid).get();
-            if (!doc.exists) {
-                alert("❌ Usuario no registrado");
-                window.location.href = "menu.html";
-            }
+    auth.onAuthStateChanged(async user => {
+      if (!user) {
+        window.location.href = "login.html";
+        return;
+      }
+      // Cargo datos de usuario
+      const docUser = await db.collection("usuarios").doc(user.uid).get();
+      if (!docUser.exists) {
+        alert("❌ Usuario no registrado");
+        window.location.href = "menu.html";
+        return;
+      }
+      usuarioActual = docUser.data();
 
-            usuarioActual = doc.data();
+      // Configuro fecha por defecto (hoy)
+      const hoy = new Date().toISOString().split("T")[0];
+      document.getElementById("fechaSeleccionada").value = hoy;
 
-            const hoy = new Date().toISOString().split("T")[0];
-            document.getElementById("fechaSeleccionada").value = hoy;
+      // Si no es admin, ajusto vista
+      if (usuarioActual.rol !== "admin") {
+        const nombreCompleto = `${usuarioActual.nombre} ${usuarioActual.apellido}`;
+        const sector = usuarioActual.sector || "";
+        const legajo = usuarioActual.legajo || "";
+        document.getElementById("tituloResumen").innerText =
+          `📊 Resumen de ${nombreCompleto} – ${sector} (Legajo: ${legajo})`;
 
-            if (usuarioActual.rol !== "admin") {
-                const nombreCompleto = `${usuarioActual.nombre} ${usuarioActual.apellido}`;
-                const sector = usuarioActual.sector || "";
-                const legajo = usuarioActual.legajo || "";
-                document.getElementById("tituloResumen").innerText = `📊 Resumen de ${nombreCompleto} – ${sector} (Legajo: ${legajo})`;
+        // Oculto columnas innecesarias
+        document.querySelectorAll(".th-legajo, .th-apellido, .th-nombre, .th-sector")
+          .forEach(th => th.remove());
+      }
 
-                // Ocultar columnas innecesarias
-                document.querySelectorAll(".th-legajo, .th-apellido, .th-nombre, .th-sector")
-                    .forEach(th => th.remove());
-            }
+      // Todo listo: oculto spinner y muestro contenido
+      document.getElementById("loadingOverlay").classList.add("d-none");
+      document.getElementById("appContent").classList.remove("d-none");
 
-            cargarResumen();
-        });
+      // Cargo resumen inicial
+      cargarResumen();
+    });
 
-        async function cargarResumen() {
-            const fecha = document.getElementById("fechaSeleccionada").value;
-            const tbody = document.getElementById("tbodyResumen");
-            tbody.innerHTML = "";
+    async function cargarResumen() {
+      const fecha = document.getElementById("fechaSeleccionada").value;
+      const tbody = document.getElementById("tbodyResumen");
+      tbody.innerHTML = "";
 
-            const asistenciasSnap = await db.collection("asistencias")
-                .where("fecha", "==", fecha).get();
+      const asistenciasSnap = await db.collection("asistencias")
+        .where("fecha", "==", fecha)
+        .get();
 
-            const asistencias = {};
-            asistenciasSnap.forEach(doc => asistencias[doc.data().legajo] = doc.data());
+      const asistencias = {};
+      asistenciasSnap.forEach(doc => {
+        asistencias[doc.data().legajo] = doc.data();
+      });
 
-            let usuariosSnap;
+      let usuariosSnap;
+      if (usuarioActual.rol === "admin") {
+        usuariosSnap = await db.collection("usuarios").get();
+      } else {
+        usuariosSnap = [{ data: () => usuarioActual }];
+      }
 
-            if (usuarioActual.rol === "admin") {
-                usuariosSnap = await db.collection("usuarios").get();
-            } else {
-                usuariosSnap = [{ data: () => usuarioActual }];
-            }
+      usuariosSnap.forEach(doc => {
+        const u = typeof doc.data === "function" ? doc.data() : doc;
+        const a = asistencias[u.legajo];
+        const diaSemana = new Date(fecha)
+          .toLocaleDateString("es-AR", { weekday: 'long' });
+        const esperado = u.horarios?.[capitalizar(diaSemana)] || null;
+        const ingreso = a?.ingreso?.hora || "-";
+        const egreso = a?.egreso?.hora || "-";
+        const horas = a?.horasTrabajadas?.toFixed(2) || "-";
+        let estado = "Ausente";
 
-            usuariosSnap.forEach(doc => {
-                const u = typeof doc.data === "function" ? doc.data() : doc;
-                const a = asistencias[u.legajo];
-                const diaSemana = new Date(fecha).toLocaleDateString("es-AR", { weekday: 'long' });
-                const esperado = u.horarios?.[capitalizar(diaSemana)] || null;
-                const ingreso = a?.ingreso?.hora || "-";
-                const egreso = a?.egreso?.hora || "-";
-                const horas = a?.horasTrabajadas?.toFixed(2) || "-";
-                let estado = "Ausente";
+        if (a && esperado) {
+          const t1 = esperado.entrada;
+          const t2 = esperado.salida;
+          const llegoTarde = ingreso > t1;
+          const salioAntes = egreso < t2;
+          const cumpleHoras = a.horasTrabajadas >= calcularHoras(t1, t2);
 
-                if (a && esperado) {
-                    const t1 = esperado.entrada;
-                    const t2 = esperado.salida;
-                    const llegoTarde = ingreso > t1;
-                    const salioAntes = egreso < t2;
-                    const cumpleHoras = a.horasTrabajadas >= calcularHoras(t1, t2);
-
-                    if (!ingreso || !egreso) estado = "Incompleto";
-                    else if (llegoTarde || salioAntes) estado = "Parcial";
-                    else if (cumpleHoras) estado = "✔️ OK";
-                }
-
-                const badge = estado === "✔️ OK" ? "success" : estado === "Ausente" ? "danger" : "warning";
-                const esperadaTxt = esperado ? `${esperado.entrada} - ${esperado.salida}` : "-";
-
-                tbody.innerHTML += `
-                    <tr>
-                        ${usuarioActual.rol === "admin" ? `
-                        <td>${u.legajo}</td>
-                        <td>${u.apellido}</td>
-                        <td>${u.nombre}</td>
-                        <td>${u.sector}</td>
-                        ` : ""}
-                        <td>${esperadaTxt}</td>
-                        <td>${ingreso}</td>
-                        <td>${egreso}</td>
-                        <td>${horas}</td>
-                        <td><span class="badge bg-${badge}">${estado}</span></td>
-                    </tr>`;
-            });
+          if (!a.ingreso?.hora || !a.egreso?.hora) estado = "Incompleto";
+          else if (llegoTarde || salioAntes) estado = "Parcial";
+          else if (cumpleHoras) estado = "✔️ OK";
         }
 
-        function capitalizar(palabra) {
-            return palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase();
-        }
+        const badgeType = estado === "✔️ OK"
+          ? "success"
+          : estado === "Ausente"
+            ? "danger"
+            : "warning";
+        const esperadaTxt = esperado
+          ? `${esperado.entrada} - ${esperado.salida}`
+          : "-";
 
-        function calcularHoras(inicio, fin) {
-            const [h1, m1] = inicio.split(":").map(Number);
-            const [h2, m2] = fin.split(":").map(Number);
-            return ((h2 * 60 + m2) - (h1 * 60 + m1)) / 60;
-        }
+        tbody.innerHTML += `
+          <tr>
+            ${usuarioActual.rol === "admin" ? `
+            <td>${u.legajo}</td>
+            <td>${u.apellido}</td>
+            <td>${u.nombre}</td>
+            <td>${u.sector}</td>
+            ` : ""}
+            <td>${esperadaTxt}</td>
+            <td>${ingreso}</td>
+            <td>${egreso}</td>
+            <td>${horas}</td>
+            <td><span class="badge bg-${badgeType}">${estado}</span></td>
+          </tr>`;
+      });
+    }
 
-        function exportarExcel() {
-            const tabla = document.getElementById("tablaResumen");
-            const wb = XLSX.utils.table_to_book(tabla, { sheet: "Resumen" });
-            XLSX.writeFile(wb, "resumen_diario.xlsx");
-        }
-    </script>
+    function capitalizar(palabra) {
+      return palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase();
+    }
+
+    function calcularHoras(inicio, fin) {
+      const [h1, m1] = inicio.split(":").map(Number);
+      const [h2, m2] = fin.split(":").map(Number);
+      return ((h2 * 60 + m2) - (h1 * 60 + m1)) / 60;
+    }
+
+    function exportarExcel() {
+      const tabla = document.getElementById("tablaResumen");
+      const wb = XLSX.utils.table_to_book(tabla, { sheet: "Resumen" });
+      XLSX.writeFile(wb, "resumen_diario.xlsx");
+    }
+  </script>
 </body>
 
 </html>
