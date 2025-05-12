@@ -1,65 +1,44 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Resumen Mensual de Asistencias</title>
-
-  <!-- Bootstrap CSS & JS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
-  <!-- XLSX -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
   <style>
-    body {
-      background-color: #f8f9fa;
-      padding: 2rem;
-      min-height: 100vh;
-    }
-    .container {
-      max-width: 1300px;
-    }
-    .badge-danger { background-color: #dc3545; }
-    .badge-warning { background-color: #ffc107; }
-    .badge-success { background-color: #28a745; }
-
+    body { margin: 0; padding: 0; background-color: #f8f9fa; }
+    .container { max-width: 1300px; padding: 2rem; }
     /* Overlay spinner */
     #loadingOverlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(255,255,255,0.8);
-      z-index: 9999;
+      background: rgba(255,255,255,0.85);
       display: flex;
       align-items: center;
       justify-content: center;
+      z-index: 9999;
       flex-direction: column;
     }
   </style>
 </head>
-
 <body>
-
-  <!-- Spinner overlay mientras Firebase y datos cargan -->
+  <!-- Spinner overlay -->
   <div id="loadingOverlay">
     <div class="spinner-border text-primary mb-3" role="status">
-      <span class="visually-hidden">Cargando...</span>
+      <span class="visually-hidden">Cargando…</span>
     </div>
-    <div>Cargando datos de Firebase...</div>
+    <div>Cargando datos…</div>
   </div>
 
-  <!-- Contenido principal, oculto hasta que Firebase esté listo -->
-  <div id="appContent" class="d-none">
+  <!-- App content (hidden until ready) -->
+  <div id="appContent" style="display: none;">
     <div class="container">
       <h3 class="mb-4" id="tituloResumen">📅 Resumen Mensual de Asistencias</h3>
-
       <div class="row g-3 align-items-end mb-4">
         <div class="col-md-auto">
           <label for="mesSeleccionado" class="form-label">Mes</label>
@@ -80,14 +59,14 @@
         <div class="col-md-auto d-grid">
           <button class="btn btn-outline-secondary" onclick="imprimirResumen()">🖨️ Imprimir</button>
         </div>
-         <div class="col-md-auto d-grid">
+        <div class="col-md-auto d-grid">
           <a href="menu.html" class="btn btn-outline-secondary">🏠 Menú Principal</a>
         </div>
       </div>
 
       <div class="table-responsive">
         <table class="table table-bordered table-hover" id="tablaResumenMensual">
-          <thead class="table-dark" id="encabezadoTabla">
+          <thead class="table-dark">
             <tr>
               <th class="th-legajo">Legajo</th>
               <th class="th-apellido">Apellido</th>
@@ -97,6 +76,9 @@
               <th>⚠️ Parciales</th>
               <th>⏳ Incompletos</th>
               <th>❌ Ausentes</th>
+              <th>🟢 Justificadas</th>
+              <th>🟠 Raz. Part. Mes</th>
+              <th>🔵 Raz. Part. Año</th>
               <th>⏱ Horas</th>
               <th>📈 % Cumplimiento</th>
             </tr>
@@ -108,12 +90,11 @@
   </div>
 
   <script>
-    // Configuración de Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyC4v9h8eXWRBnzTD-VDDludynd5nzOv4xc",
       authDomain: "est-utn-c0988.firebaseapp.com",
       projectId: "est-utn-c0988",
-      storageBucket: "est-utn-c0988.firebasestorage.app",
+      storageBucket: "est-utn-c0988.appspot.com",
       messagingSenderId: "788767016042",
       appId: "1:788767016042:web:8a480a74e3b1ef0de97613"
     };
@@ -124,127 +105,48 @@
 
     auth.onAuthStateChanged(async user => {
       if (!user) {
-        window.location.href = "login.html";
+        location.href = "index.html";
         return;
       }
-      // Obtengo datos de usuario
       const doc = await db.collection("usuarios").doc(user.uid).get();
       if (!doc.exists) {
-        alert("❌ Usuario no registrado");
-        window.location.href = "menu.html";
+        location.href = "menu.html";
         return;
       }
       usuarioActual = doc.data();
 
-      // Fecha por defecto = mes actual
-      document.getElementById("mesSeleccionado").value =
-        new Date().toISOString().slice(0, 7);
-
-      // Si es admin, cargo sectores; si no, ajusto vista
+      // Inicializar campos
+      document.getElementById("mesSeleccionado").value = new Date().toISOString().slice(0, 7);
       if (usuarioActual.rol === "admin") {
         await cargarSectoresUnicos();
       } else {
         document.getElementById("filtroSector").parentElement.style.display = "none";
         const nombre = `${usuarioActual.nombre} ${usuarioActual.apellido}`;
-        document.getElementById("tituloResumen").innerText =
-          `📅 Resumen de ${nombre} – ${usuarioActual.sector} (Legajo: ${usuarioActual.legajo})`;
+        document.getElementById("tituloResumen").innerText = `📅 Resumen de ${nombre}`;
         document.querySelectorAll(".th-legajo, .th-apellido, .th-nombre, .th-sector")
-          .forEach(th => th.remove());
+          .forEach(el => el.remove());
       }
 
-      // Oculto overlay y muestro contenido
-      document.getElementById("loadingOverlay").classList.add("d-none");
-      document.getElementById("appContent").classList.remove("d-none");
+      await cargarResumenMensual();
 
-      // Primera carga de datos
-      cargarResumenMensual();
+      // Mostrar la app y ocultar spinner
+      document.getElementById("loadingOverlay").style.display = "none";
+      document.getElementById("appContent").style.display = "block";
     });
 
     async function cargarSectoresUnicos() {
       const snapshot = await db.collection("usuarios").get();
       const sectores = new Set();
-      snapshot.forEach(doc => {
-        const s = doc.data().sector?.trim();
+      snapshot.forEach(d => {
+        const s = d.data().sector?.trim();
         if (s) sectores.add(s);
       });
-      const select = document.getElementById("filtroSector");
-      sectores.forEach(sec => {
+      const sel = document.getElementById("filtroSector");
+      sectores.forEach(s => {
         const opt = document.createElement("option");
-        opt.value = sec; opt.textContent = sec;
-        select.appendChild(opt);
-      });
-    }
-
-    async function cargarResumenMensual() {
-      const mes = document.getElementById("mesSeleccionado").value;
-      const filtroSector = document.getElementById("filtroSector").value;
-      if (!mes) return alert("Seleccioná un mes");
-      const [anio, m] = mes.split("-").map(Number);
-      const dias = getDiasHabilesDelMes(anio, m - 1);
-
-      let usuariosSnap;
-      if (usuarioActual.rol === "admin") {
-        usuariosSnap = await db.collection("usuarios").get();
-      } else {
-        usuariosSnap = [{ data: () => usuarioActual }];
-      }
-
-      const asistenciasSnap = await db.collection("asistencias")
-        .where("fecha", ">=", dias[0])
-        .where("fecha", "<=", dias[dias.length - 1])
-        .get();
-
-      const asistencias = {};
-      asistenciasSnap.forEach(doc => {
-        const d = doc.data();
-        asistencias[d.legajo] = asistencias[d.legajo] || {};
-        asistencias[d.legajo][d.fecha] = d;
-      });
-
-      const tbody = document.getElementById("tbodyResumenMensual");
-      tbody.innerHTML = "";
-
-      usuariosSnap.forEach(doc => {
-        const u = typeof doc.data === "function" ? doc.data() : doc;
-        if (usuarioActual.rol === "admin" &&
-            document.getElementById("filtroSector").value !== "Todos" &&
-            u.sector !== filtroSector) return;
-
-        let completos = 0, parciales = 0, incompletos = 0, ausentes = 0, horas = 0;
-        dias.forEach(fecha => {
-          const diaSemana = new Date(fecha)
-            .toLocaleDateString("es-AR", { weekday: 'long' });
-          const horario = u.horarios?.[capitalizar(diaSemana)];
-          const a = asistencias[u.legajo]?.[fecha];
-          if (!horario) return;
-          if (!a) { ausentes++; return; }
-          if (!a.ingreso?.hora || !a.egreso?.hora) { incompletos++; return; }
-          const t1 = horario.entrada, t2 = horario.salida;
-          const ing = a.ingreso.hora, eg = a.egreso.hora;
-          const tarde = ing > t1, antes = eg < t2;
-          if (tarde || antes) parciales++;
-          else completos++;
-          horas += a.horasTrabajadas || 0;
-        });
-
-        const total = completos + parciales + incompletos + ausentes;
-        const pct = total > 0 ? Math.round((completos / total) * 100) : 0;
-
-        tbody.innerHTML += `
-          <tr>
-            ${usuarioActual.rol === "admin" ? `
-              <td>${u.legajo}</td>
-              <td>${u.apellido}</td>
-              <td>${u.nombre}</td>
-              <td>${u.sector}</td>
-            ` : ""}
-            <td>${completos}</td>
-            <td>${parciales}</td>
-            <td>${incompletos}</td>
-            <td>${ausentes}</td>
-            <td>${horas.toFixed(2)}</td>
-            <td>${pct}%</td>
-          </tr>`;
+        opt.value = s;
+        opt.textContent = s;
+        sel.appendChild(opt);
       });
     }
 
@@ -252,33 +154,120 @@
       const dias = [];
       const ultimo = new Date(anio, mes + 1, 0).getDate();
       for (let d = 1; d <= ultimo; d++) {
-        const f = new Date(anio, mes, d).getDay();
-        if (f !== 0 && f !== 6) {
-          dias.push(new Date(anio, mes, d).toISOString().split("T")[0]);
-        }
+        const f = new Date(anio, mes, d);
+        if (f.getDay() !== 0 && f.getDay() !== 6) dias.push(f.toISOString().split("T")[0]);
       }
       return dias;
     }
 
-    function capitalizar(w) {
-      return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+    function capitalizar(p) {
+      return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+    }
+
+    async function cargarResumenMensual() {
+      const mes = document.getElementById("mesSeleccionado").value;
+      const filtroSector = document.getElementById("filtroSector").value;
+      if (!mes) return alert("Seleccioná un mes");
+      const [anio, mesNum] = mes.split("-").map(Number);
+      const dias = getDiasHabilesDelMes(anio, mesNum - 1);
+      const primerDia = dias[0], ultimoDia = dias[dias.length - 1];
+
+      const snapMes = await db.collection("asistencias")
+        .where("fecha", ">=", primerDia)
+        .where("fecha", "<=", ultimoDia)
+        .get();
+      const snapAnio = await db.collection("asistencias")
+        .where("fecha", ">=", `${anio}-01-01`)
+        .where("fecha", "<=", `${anio}-12-31`)
+        .get();
+
+      const asistencias = {};
+      snapMes.forEach(d => {
+        const a = d.data();
+        asistencias[a.legajo] ??= {};
+        asistencias[a.legajo][a.fecha] = a;
+      });
+
+      const razonesAnio = {};
+      snapAnio.forEach(d => {
+        const a = d.data();
+        if (a.razonParticular) razonesAnio[a.legajo] = (razonesAnio[a.legajo] || 0) + 1;
+      });
+
+      const usuariosSnap = usuarioActual.rol === "admin"
+        ? await db.collection("usuarios").get()
+        : [{ data: () => usuarioActual }];
+
+      const tbody = document.getElementById("tbodyResumenMensual");
+      tbody.innerHTML = "";
+
+      usuariosSnap.forEach(doc => {
+        const u = typeof doc.data === "function" ? doc.data() : doc;
+        if (usuarioActual.rol === "admin" && filtroSector !== "Todos" && u.sector !== filtroSector) return;
+
+        let completos = 0, parciales = 0, incompletos = 0, ausentes = 0;
+        let justificadas = 0, razonesMes = 0, horas = 0;
+        const esperado = u.horarios || {};
+
+        dias.forEach(fecha => {
+          const diaSemana = capitalizar(new Date(fecha).toLocaleDateString("es-AR", { weekday: 'long' }));
+          const horario = esperado[diaSemana];
+          const a = asistencias[u.legajo]?.[fecha];
+          if (!horario) return;
+          if (!a) { ausentes++; return; }
+          if (!a.ingreso || !a.egreso) { incompletos++; return; }
+
+          const ingreso = a.ingreso.hora, egreso = a.egreso.hora;
+          const [h1,m1] = horario.entrada.split(":").map(Number);
+          const tolerancia = new Date(2000,0,1,h1,m1+15).toTimeString().slice(0,5);
+          const [h2,m2] = horario.salida.split(":").map(Number);
+          const salidaTol = new Date(2000,0,1,h2,m2-5).toTimeString().slice(0,5);
+          const tarde = ingreso > tolerancia, temprano = egreso < salidaTol;
+
+          if (!tarde && !temprano) completos++;
+          else parciales++;
+
+          horas += a.horasTrabajadas || 0;
+        });
+
+        const total = completos + parciales + incompletos + ausentes;
+        const cumplimiento = total ? Math.round((completos / total) * 100) : 0;
+        const razonesAno = razonesAnio[u.legajo] || 0;
+
+        tbody.innerHTML += `
+          <tr>
+            ${usuarioActual.rol === "admin" ? `
+              <td>${u.legajo}</td>
+              <td>${u.apellido}</td>
+              <td>${u.nombre}</td>
+              <td>${u.sector}</td>` : ``}
+            <td>${completos}</td>
+            <td>${parciales}</td>
+            <td>${incompletos}</td>
+            <td>${ausentes}</td>
+            <td>${justificadas}</td>
+            <td>${razonesMes}/${Math.floor(dias.length/10)}</td>
+            <td>${razonesAno}/${Math.floor(dias.length/2)}</td>
+            <td>${horas.toFixed(2)}</td>
+            <td>${cumplimiento}%</td>
+          </tr>`;
+      });
     }
 
     function exportarExcel() {
-      const tbl = document.getElementById("tablaResumenMensual");
-      const wb = XLSX.utils.table_to_book(tbl, { sheet: "Resumen mensual" });
+      const tabla = document.getElementById("tablaResumenMensual");
+      const wb = XLSX.utils.table_to_book(tabla, { sheet: "Resumen mensual" });
       XLSX.writeFile(wb, "resumen_mensual.xlsx");
     }
 
     function imprimirResumen() {
-      const orig = document.body.innerHTML;
-      const tbl = document.getElementById("tablaResumenMensual").outerHTML;
-      document.body.innerHTML = `<h3>${document.getElementById("tituloResumen").innerText}</h3>${tbl}`;
+      const original = document.body.innerHTML;
+      const tabla = document.getElementById("tablaResumenMensual").outerHTML;
+      document.body.innerHTML = `<h3>${document.getElementById("tituloResumen").innerText}</h3>${tabla}`;
       window.print();
-      document.body.innerHTML = orig;
+      document.body.innerHTML = original;
       location.reload();
     }
   </script>
 </body>
-
 </html>

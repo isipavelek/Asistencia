@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -20,30 +21,37 @@
       height: 100vh;
       overflow: hidden;
     }
+
     /* Overlay spinner */
     #loadingOverlay {
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(255,255,255,0.8);
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.8);
       display: flex;
       align-items: center;
       justify-content: center;
       flex-direction: column;
       z-index: 9999;
     }
+
     #appContent {
       display: none;
       height: 100%;
     }
+
     .card {
       width: 100%;
       max-width: 400px;
       padding: 2rem;
       border-radius: 0.75rem;
-      box-shadow: 0 0 15px rgba(0,0,0,0.05);
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
     }
   </style>
 </head>
+
 <body>
 
   <!-- Spinner overlay -->
@@ -59,7 +67,7 @@
     <div class="card text-center">
       <h4 class="mb-3">📝 Registro de Asistencia</h4>
 
-      <!-- Spinner de carga interna -->
+      <!-- Spinner interno -->
       <div id="loading" class="d-none mb-3">
         <div class="d-flex align-items-center justify-content-center">
           <div class="spinner-border text-primary me-2" role="status">
@@ -70,13 +78,11 @@
       </div>
       <div id="mensaje" class="mb-3"></div>
 
-      <!-- Si el usuario está logueado mostramos su legajo y nombre -->
       <div id="userInfo" class="d-none mb-3 text-start">
         <p><strong>Legajo:</strong> <span id="displayLegajo"></span></p>
         <p><strong>Nombre:</strong> <span id="displayNombre"></span></p>
       </div>
 
-      <!-- Grupo de input de legajo, ocultado si está logueado -->
       <div id="legajoGroup" class="mb-3">
         <label class="form-label">Legajo</label>
         <input type="text" id="legajo" class="form-control" placeholder="Ingresá tu legajo" />
@@ -90,6 +96,10 @@
       <button id="btnRegistrar" onclick="registrarAsistencia()" class="btn btn-primary w-100">
         Registrar
       </button>
+
+      <a href="menu.html" class="btn btn-outline-secondary w-100 mt-2">
+        🏠 Menú Principal
+      </a>
     </div>
   </div>
 
@@ -112,14 +122,14 @@
 
     // Elementos DOM
     const loadingOverlay = document.getElementById("loadingOverlay");
-    const appContent     = document.getElementById("appContent");
-    const loadingEl      = document.getElementById("loading");
-    const mensajeEl      = document.getElementById("mensaje");
-    const btnRegistrar   = document.getElementById("btnRegistrar");
-    const legajoGroup    = document.getElementById("legajoGroup");
-    const userInfo       = document.getElementById("userInfo");
-    const displayLegajo  = document.getElementById("displayLegajo");
-    const displayNombre  = document.getElementById("displayNombre");
+    const appContent = document.getElementById("appContent");
+    const loadingEl = document.getElementById("loading");
+    const mensajeEl = document.getElementById("mensaje");
+    const btnRegistrar = document.getElementById("btnRegistrar");
+    const legajoGroup = document.getElementById("legajoGroup");
+    const userInfo = document.getElementById("userInfo");
+    const displayLegajo = document.getElementById("displayLegajo");
+    const displayNombre = document.getElementById("displayNombre");
 
     // Spinner helpers
     function showLoading() {
@@ -157,8 +167,8 @@
       }
       // oculto overlay y muestro UI
       loadingOverlay.style.display = "none";
-      appContent.style.display     = "flex";
-      document.body.style.overflow  = "auto";
+      appContent.style.display = "flex";
+      document.body.style.overflow = "auto";
     });
 
     // Registro de asistencia
@@ -177,11 +187,11 @@
         let persona;
         if (currentLegajo) {
           persona = (await db.collection("usuarios")
-            .where("legajo","==",legajo).get())
+            .where("legajo", "==", legajo).get())
             .docs[0].data();
         } else {
           const snap = await db.collection("usuarios")
-            .where("legajo","==",legajo).get();
+            .where("legajo", "==", legajo).get();
           if (snap.empty) throw new Error("Legajo no encontrado");
           persona = snap.docs[0].data();
         }
@@ -197,39 +207,39 @@
             await ref.set({
               legajo, nombre: persona.nombre, apellido: persona.apellido,
               sector: persona.sector, fecha: fechaHoy,
-              ingreso: { hora: horaAhora, ubicacion:{lat:latitude,lng:longitude} },
-              justificacion, estado:"Ingreso registrado"
+              ingreso: { hora: horaAhora, ubicacion: { lat: latitude, lng: longitude } },
+              justificacion, estado: "Ingreso registrado"
             });
-            mensajeEl.className="text-success mb-3";
-            mensajeEl.textContent="✅ Ingreso registrado correctamente.";
+            mensajeEl.className = "text-success mb-3";
+            mensajeEl.textContent = "✅ Ingreso registrado correctamente.";
           } else {
             const data = docAs.data();
             if (data.egreso) {
-              mensajeEl.className="text-info mb-3";
-              mensajeEl.textContent="ℹ️ Ya registraste ingreso y egreso hoy.";
+              mensajeEl.className = "text-info mb-3";
+              mensajeEl.textContent = "ℹ️ Ya registraste ingreso y egreso hoy.";
               hideLoading();
               return;
             }
-            const [h1,m1] = data.ingreso.hora.split(":").map(Number);
-            const [h2,m2] = horaAhora.split(":").map(Number);
-            const minutos = (h2*60+m2)-(h1*60+m1);
-            const horas = (minutos/60).toFixed(2);
+            const [h1, m1] = data.ingreso.hora.split(":").map(Number);
+            const [h2, m2] = horaAhora.split(":").map(Number);
+            const minutos = (h2 * 60 + m2) - (h1 * 60 + m1);
+            const horas = (minutos / 60).toFixed(2);
             await ref.update({
-              egreso:{hora:horaAhora, ubicacion:{lat:latitude,lng:longitude}},
-              horasTrabajadas:parseFloat(horas),
-              estado:"Jornada registrada"
+              egreso: { hora: horaAhora, ubicacion: { lat: latitude, lng: longitude } },
+              horasTrabajadas: parseFloat(horas),
+              estado: "Jornada registrada"
             });
-            mensajeEl.className="text-success mb-3";
-            mensajeEl.textContent=`✅ Egreso registrado. Total: ${horas} hs.`;
+            mensajeEl.className = "text-success mb-3";
+            mensajeEl.textContent = `✅ Egreso registrado. Total: ${horas} hs.`;
           }
           hideLoading();
         }, () => {
           hideLoading();
-          mensajeEl.textContent="❌ No se pudo obtener la ubicación.";
+          mensajeEl.textContent = "❌ No se pudo obtener la ubicación.";
         });
       } catch (err) {
         hideLoading();
-        mensajeEl.className="text-danger mb-3";
+        mensajeEl.className = "text-danger mb-3";
         mensajeEl.textContent = err.message.includes("Legajo")
           ? "❌ Legajo no encontrado."
           : "❌ Error al registrar asistencia.";
@@ -237,4 +247,5 @@
     }
   </script>
 </body>
+
 </html>
